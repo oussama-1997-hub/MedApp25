@@ -9,7 +9,7 @@ st.title("Prediction of Target Using Decision Tree 2222")
 st.write("Please fill in the details below to predict the target.")
 
 # Load the data
-url = "https://raw.githubusercontent.com/SondesHammami/MedApp25/main/BD_ML_1target.xlsx"
+url = "https://raw.githubusercontent.com/oussama-1997-hub/MedApp25/main/BD%20sans%20encod%20stand.xlsx"
 df = pd.read_excel(url, engine="openpyxl")
 
 # Display the data in the app (optional)
