@@ -1,4 +1,9 @@
+!pip install scikit-learn
 import streamlit as st
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
 st.title("Streamlit in Colab")
 st.write("Hello from Google Colab!")
@@ -6,10 +11,7 @@ st.write("Hello from Google Colab!")
 name = st.text_input("What's your name?")
 if name:
     st.write(f"Hello, {name}!")
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
+
 
 # 1. Charger les données
 file_path = 'BD_ML_1target.xlsx'  # ← à adapter
