@@ -14,8 +14,8 @@ if name:
 
 
 # 1. Charger les données
-file_path = 'BD_ML_1target.xlsx'  # ← à adapter
-df = pd.read_excel(file_path)
+pd.read_excel("https://github.com/SondesHammami/MedApp25/blob/main/BD_ML_1target.xlsx", engine="openpyxl")
+
 
 # 2. Séparer X et y (la dernière colonne est la cible)
 X = df.iloc[:, :-1]  # toutes les colonnes sauf la dernière
