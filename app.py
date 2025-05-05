@@ -5,7 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
 # Streamlit app title
-st.title("Prediction of Target Using Decision Tree")
+st.title("Prediction of Target Using Decision Tree 2222")
 st.write("Please fill in the details below to predict the target.")
 
 # Load the data
