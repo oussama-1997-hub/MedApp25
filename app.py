@@ -6,9 +6,6 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-# ─── PAGE CONFIG ────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="Technique Survival Predictor", layout="wide")
-
 # ─── STYLING ────────────────────────────────────────────────────────────────────
 st.markdown(
     """
