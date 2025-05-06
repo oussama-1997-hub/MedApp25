@@ -140,27 +140,17 @@ with st.form("patient_form"):
                 val = st.checkbox(col.replace("_"," ").title())
                 locals()[col] = int(val)
 
-    # Dialysis Parameters
-    with st.expander("💧 Dialysis Parameters", expanded=False):
-        # Numeric fields (from df_model minus target & categorical)
-        numeric_list = [c for c in df_model.columns
-                        if c not in binary_cols + multi_cat_cols
-                        + [gender_col, origin_col, 'transplant_before_dialysis', target]]
-        c1, c2 = st.columns(2)
-        for i, col in enumerate(numeric_list):
-            with (c1 if i%2==0 else c2):
-                locals()[col] = st.number_input(
-                    col.replace("_"," ").title(),
-                    value=float(df[col].mean())
-                )
-        # Multi-category
-        c1, c2 = st.columns(2)
-        for i, col in enumerate(multi_cat_cols):
-            with (c1 if i%2==0 else c2):
-                locals()[col] = st.selectbox(
-                    col.strip(),
-                    df[col].dropna().unique().tolist()
-                )
+  # 🧩 Multi-category inputs
+c1, c2 = st.columns(2)
+for i, col in enumerate(multi_cat_cols):
+    with (c1 if i % 2 == 0 else c2):
+        options = sorted(df[col].dropna().unique().tolist())
+        default_val = options[0] if options else None
+        locals()[col] = st.selectbox(
+            col.strip().replace("_", " ").title(),
+            options,
+            index=options.index(default_val) if default_val in options else 0
+        )
 
     submitted = st.form_submit_button("🔍 Predict")
 
