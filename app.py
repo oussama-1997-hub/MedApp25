@@ -140,34 +140,27 @@ with st.form("patient_form"):
                 val = st.checkbox(col.replace("_"," ").title())
                 locals()[col] = int(val)
 
- # 💧 Dialysis Parameters
-with st.expander("💧 Dialysis Parameters", expanded=False):
-    dialysis_nums = [
-        'BMI_start_PD', 'Urine_output_start', 'Initial_RRF',
-        'Initial_UF', 'Initial_albumin', 'Initial_Hb', 'Nbre_peritonitis'
-    ]
-
-    d1, d2 = st.columns(2)
-    for i, col in enumerate(dialysis_nums):
-        with (d1 if i % 2 == 0 else d2):
-            locals()[col] = st.number_input(
-                col.replace("_", " ").title(),
-                value=float(df[col].mean())
-            )
-
-    # Ensure selectboxes show full range of values from 0 to max(existing value)
-    categorical_cols = ['Permeability_type', 'Germ']
-    d1, d2 = st.columns(2)
-    for i, col in enumerate(categorical_cols):
-        with (d1 if i % 2 == 0 else d2):
-            max_val = int(df[col].max())
-            all_possible_values = list(range(0, max_val + 1))
-            default_val = int(df[col].mode()[0]) if not df[col].mode().empty else 0
-            locals()[col] = st.selectbox(
-                col.replace("_", " ").title(),
-                all_possible_values,
-                index=all_possible_values.index(default_val)
-            )
+    # Dialysis Parameters
+    with st.expander("💧 Dialysis Parameters", expanded=False):
+        # Numeric fields (from df_model minus target & categorical)
+        numeric_list = [c for c in df_model.columns
+                        if c not in binary_cols + multi_cat_cols
+                        + [gender_col, origin_col, 'transplant_before_dialysis', target]]
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(numeric_list):
+            with (c1 if i%2==0 else c2):
+                locals()[col] = st.number_input(
+                    col.replace("_"," ").title(),
+                    value=float(df[col].mean())
+                )
+        # Multi-category
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(multi_cat_cols):
+            with (c1 if i%2==0 else c2):
+                locals()[col] = st.selectbox(
+                    col.strip(),
+                    df[col].dropna().unique().tolist()
+                )
 
     submitted = st.form_submit_button("🔍 Predict")
 
@@ -207,4 +200,3 @@ if submitted:
     else:
         st.error(f"⚠️ **Not expected to exceed 2 years** (Level {pred})")
         st.warning("Consider closer monitoring or alternative strategies for long-term success.")
-
