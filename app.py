@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="Technique Survival Predictor", layout="wide")
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
