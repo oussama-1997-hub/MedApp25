@@ -52,7 +52,6 @@ model = DecisionTreeClassifier(random_state=42)
 model.fit(X_scaled, y)
 
 # === Streamlit UI ===
-st.set_page_config(page_title="Technique Survival Predictor", layout="wide")
 st.title("🔬 Technique Survival Level Predictor")
 st.markdown("Use the form below to input patient and clinical data. The model will predict the **technique survival level**.")
 
