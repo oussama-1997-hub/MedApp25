@@ -65,45 +65,56 @@ with st.expander("📊 View Sample Data", expanded=False):
     st.dataframe(df.head(), use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ─── 4) PREPARE MODEL ────────────────────────────────────────────────────────────
+# ─── 4) PREPARE MODEL DATA ───────────────────────────────────────────────────────
 target = 'technique_survival_levels'
+drop_feats = ['BMI_one_year', 'RRF_one_year', 'Technique_survival']
 
-# Identify binary columns (0/1 except target)
-binary_cols = [c for c in df.columns if set(df[c].dropna().unique()) <= {0,1} and c != target]
+# Create df_model without the dropped features
+df_model = df.drop(columns=drop_feats)
+
+# Identify binary cols (0/1) excluding target
+binary_cols = [c for c in df_model.columns 
+               if set(df_model[c].dropna().unique()) <= {0,1} and c != target]
 
 # Multi-category columns
 multi_cat_cols = ['scholarship level ', 'Initial_nephropathy',
                   'Technique', 'Permeability_type', 'Germ']
 
-# Special two‑value maps
+# Two-value categorical maps
+gender_col = 'Gender '
+origin_col = 'Rural_or_Urban_Origin'
 gender_map = {"Male":1, "Female":2}
 origin_map = {"Urban":2, "Rural":1}
 
-# Encode for training
-df_enc = df.copy()
-# multi-cat
+# Encode df_model
+df_enc = df_model.copy()
+# Map gender & origin are already numeric in df_model
+
+# Label-encode multi-cats
 le_dict = {}
 for col in multi_cat_cols:
     le = LabelEncoder()
     df_enc[col] = le.fit_transform(df_enc[col].astype(str))
     le_dict[col] = le
 
+# Split X/y and scale
 X = df_enc.drop(columns=[target])
 y = df_enc[target]
-
 scaler = StandardScaler().fit(X)
 X_scaled = scaler.transform(X)
 
+# Train model
 clf = DecisionTreeClassifier(random_state=42).fit(X_scaled, y)
 
 # ─── 5) INPUT FORM ───────────────────────────────────────────────────────────────
-st.markdown("### 📝 Enter Patient Data")
+st.markdown("### 📝 Patient Data Input")
 with st.form("patient_form"):
     # Demographics
     with st.expander("👤 Demographics", expanded=True):
         c1, c2 = st.columns(2)
         with c1:
-            age = st.number_input("Age (years)", min_value=0, max_value=120, value=int(df['Age'].mean()))
+            age = st.number_input("Age (years)", min_value=0, max_value=120,
+                                  value=int(df['Age'].mean()))
         with c2:
             gender = st.selectbox("Gender", list(gender_map.keys()))
         c1, c2 = st.columns(2)
@@ -116,7 +127,8 @@ with st.form("patient_form"):
     with st.expander("💼 Socioeconomic Status", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
-            schol = st.selectbox("Scholarship Level", df['scholarship level '].dropna().unique().tolist())
+            schol = st.selectbox("Scholarship Level",
+                                 df['scholarship level '].dropna().unique().tolist())
         with c2:
             indig = st.checkbox("Indigent CNAM Coverage")
 
@@ -130,11 +142,10 @@ with st.form("patient_form"):
 
     # Dialysis Parameters
     with st.expander("💧 Dialysis Parameters", expanded=False):
-        # Numeric fields (exclude BMI_one_year, RRF_one_year)
-        numeric_list = [c for c in df.columns 
-                        if c not in binary_cols + multi_cat_cols 
-                        + ['Gender ', 'Rural_or_Urban_Origin', 'transplant_before_dialysis', target]
-                        + ['BMI_one_year','RRF_one_year','Technique_survival']]
+        # Numeric fields (from df_model minus target & categorical)
+        numeric_list = [c for c in df_model.columns
+                        if c not in binary_cols + multi_cat_cols
+                        + [gender_col, origin_col, 'transplant_before_dialysis', target]]
         c1, c2 = st.columns(2)
         for i, col in enumerate(numeric_list):
             with (c1 if i%2==0 else c2):
@@ -146,22 +157,25 @@ with st.form("patient_form"):
         c1, c2 = st.columns(2)
         for i, col in enumerate(multi_cat_cols):
             with (c1 if i%2==0 else c2):
-                locals()[col] = st.selectbox(col.strip(), df[col].dropna().unique().tolist())
+                locals()[col] = st.selectbox(
+                    col.strip(),
+                    df[col].dropna().unique().tolist()
+                )
 
     submitted = st.form_submit_button("🔍 Predict")
 
-# ─── 6) MAKE PREDICTION ─────────────────────────────────────────────────────────
+# ─── 6) PREDICTION & INTERPRETATION ──────────────────────────────────────────────
 if submitted:
     inp = {}
     # Demographics
     inp['Age'] = age
-    inp['Gender '] = gender_map[gender]
-    inp['Rural_or_Urban_Origin'] = origin_map[origin]
+    inp[gender_col] = gender_map[gender]
+    inp[origin_col] = origin_map[origin]
     inp['transplant_before_dialysis'] = int(transpl)
     # Socioeconomic
     inp['scholarship level '] = schol
     inp['Indigent_Coverage_CNAM'] = int(indig)
-    # Medical
+    # Medical History
     for col in binary_cols:
         inp[col] = locals()[col]
     # Dialysis numeric & multi-cat
@@ -170,9 +184,8 @@ if submitted:
     for col in multi_cat_cols:
         inp[col] = locals()[col]
 
-    # Build DataFrame
+    # Build DataFrame & encode
     input_df = pd.DataFrame([inp])
-    # Encode multi-cat
     for col in multi_cat_cols:
         input_df[col] = le_dict[col].transform(input_df[col].astype(str))
 
@@ -180,10 +193,10 @@ if submitted:
     input_scaled = scaler.transform(input_df[X.columns])
     pred = clf.predict(input_scaled)[0]
 
-    # Display result + interpretation
+    # Show result
     if pred == 2:
-        st.success("✅ Predicted Technique Survival Level: 2 (will succeed ≥ 2 years)")
-        st.info("This PD technique is expected to succeed for at least **2 years**, indicating a good prognosis.")
+        st.success("✅ **Will succeed ≥ 2 years** (Level 2)")
+        st.info("This PD technique is expected to succeed for at least two years.")
     else:
-        st.error(f"⚠️ Predicted Technique Survival Level: {pred} (will not exceed 2 years)")
-        st.warning("This PD technique may not last beyond **2 years**; consider close monitoring or alternative strategies.")
+        st.error(f"⚠️ **Not expected to exceed 2 years** (Level {pred})")
+        st.warning("Consider closer monitoring or alternative strategies for long-term success.")
