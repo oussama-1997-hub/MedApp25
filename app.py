@@ -107,14 +107,13 @@ X_scaled = scaler.transform(X)
 clf = DecisionTreeClassifier(random_state=42).fit(X_scaled, y)
 
 # ─── 5) INPUT FORM ───────────────────────────────────────────────────────────────
-st.markdown("### 📝 Patient Data Input")
+st.markdown("### 📝 Enter Patient Data")
 with st.form("patient_form"):
     # Demographics
     with st.expander("👤 Demographics", expanded=True):
         c1, c2 = st.columns(2)
         with c1:
-            age = st.number_input("Age (years)", min_value=0, max_value=120,
-                                  value=int(df['Age'].mean()))
+            age = st.number_input("Age (years)", min_value=0, max_value=120, value=int(df['Age'].mean()))
         with c2:
             gender = st.selectbox("Gender", list(gender_map.keys()))
         c1, c2 = st.columns(2)
@@ -127,8 +126,7 @@ with st.form("patient_form"):
     with st.expander("💼 Socioeconomic Status", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
-            schol = st.selectbox("Scholarship Level",
-                                 df['scholarship level '].dropna().unique().tolist())
+            schol = st.selectbox("Scholarship Level", df['scholarship level '].dropna().unique().tolist())
         with c2:
             indig = st.checkbox("Indigent CNAM Coverage")
 
@@ -140,33 +138,40 @@ with st.form("patient_form"):
                 val = st.checkbox(col.replace("_"," ").title())
                 locals()[col] = int(val)
 
-  # 🧩 Multi-category inputs
-    c1, c2 = st.columns(2)
-    for i, col in enumerate(multi_cat_cols):
-        with (c1 if i % 2 == 0 else c2):
-            options = sorted(df[col].dropna().unique().tolist())
-            default_val = options[0] if options else None
-            locals()[col] = st.selectbox(
-                col.strip().replace("_", " ").title(),
-                options,
-                index=options.index(default_val) if default_val in options else 0
-            )
+    # Dialysis Parameters
+    with st.expander("💧 Dialysis Parameters", expanded=False):
+        # Numeric fields (exclude BMI_one_year, RRF_one_year)
+        numeric_list = [c for c in df.columns 
+                        if c not in binary_cols + multi_cat_cols 
+                        + ['Gender ', 'Rural_or_Urban_Origin', 'transplant_before_dialysis', target]
+                        + ['BMI_one_year','RRF_one_year','Technique_survival']]
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(numeric_list):
+            with (c1 if i%2==0 else c2):
+                locals()[col] = st.number_input(
+                    col.replace("_"," ").title(),
+                    value=float(df[col].mean())
+                )
+        # Multi-category
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(multi_cat_cols):
+            with (c1 if i%2==0 else c2):
+                locals()[col] = st.selectbox(col.strip(), df[col].dropna().unique().tolist())
 
+    submitted = st.form_submit_button("🔍 Predict")
 
-submitted = st.form_submit_button("🔍 Predict")
-
-# ─── 6) PREDICTION & INTERPRETATION ──────────────────────────────────────────────
+# ─── 6) MAKE PREDICTION ─────────────────────────────────────────────────────────
 if submitted:
     inp = {}
     # Demographics
     inp['Age'] = age
-    inp[gender_col] = gender_map[gender]
-    inp[origin_col] = origin_map[origin]
+    inp['Gender '] = gender_map[gender]
+    inp['Rural_or_Urban_Origin'] = origin_map[origin]
     inp['transplant_before_dialysis'] = int(transpl)
     # Socioeconomic
     inp['scholarship level '] = schol
     inp['Indigent_Coverage_CNAM'] = int(indig)
-    # Medical History
+    # Medical
     for col in binary_cols:
         inp[col] = locals()[col]
     # Dialysis numeric & multi-cat
@@ -175,8 +180,9 @@ if submitted:
     for col in multi_cat_cols:
         inp[col] = locals()[col]
 
-    # Build DataFrame & encode
+    # Build DataFrame
     input_df = pd.DataFrame([inp])
+    # Encode multi-cat
     for col in multi_cat_cols:
         input_df[col] = le_dict[col].transform(input_df[col].astype(str))
 
@@ -184,10 +190,10 @@ if submitted:
     input_scaled = scaler.transform(input_df[X.columns])
     pred = clf.predict(input_scaled)[0]
 
-    # Show result
+    # Display result + interpretation
     if pred == 2:
-        st.success("✅ **Will succeed ≥ 2 years** (Level 2)")
-        st.info("This PD technique is expected to succeed for at least two years.")
+        st.success("✅ Predicted Technique Survival Level: 2 (will succeed ≥ 2 years)")
+        st.info("This PD technique is expected to succeed for at least **2 years**, indicating a good prognosis.")
     else:
-        st.error(f"⚠️ **Not expected to exceed 2 years** (Level {pred})")
-        st.warning("Consider closer monitoring or alternative strategies for long-term success.")
+        st.error(f"⚠️ Predicted Technique Survival Level: {pred} (will not exceed 2 years)")
+        st.warning("This PD technique may not last beyond **2 years**; consider close monitoring or alternative strategies.")
