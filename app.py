@@ -51,51 +51,74 @@ X_scaled = scaler.fit_transform(X)
 model = DecisionTreeClassifier(random_state=42)
 model.fit(X_scaled, y)
 
-# === Streamlit UI ===
-st.title("🔬 Technique Survival Level Predictor")
-st.markdown("Use the form below to input patient and clinical data. The model will predict the **technique survival level**.")
+# Set Streamlit page configuration (must be first Streamlit command)
+st.set_page_config(page_title="Technique Survival Predictor", layout="wide")
 
-st.divider()
-st.subheader("📝 Input Patient Data")
+# Load the trained model and scaler
+with open("model.pkl", "rb") as f:
+    model = pickle.load(f)
 
-input_data = {}
-num_cols = [col for col in X.columns if col not in categorical_cols]
+with open("scaler.pkl", "rb") as f:
+    scaler = pickle.load(f)
 
-# Display Categorical Features in 3 Columns
-with st.expander("🧬 Categorical Inputs", expanded=True):
-    cat_cols = st.columns(3)
-    for idx, col in enumerate(categorical_cols):
-        with cat_cols[idx % 3]:
-            options = df[col].dropna().unique().tolist()
-            selected = st.selectbox(col.strip(), options)
-            input_data[col] = selected
+st.title("🎯 Technique Survival Level Predictor")
 
-# Display Numerical Features in 3 Columns
-with st.expander("📊 Numerical Inputs", expanded=True):
-    num_input_cols = st.columns(3)
-    for idx, col in enumerate(num_cols):
-        with num_input_cols[idx % 3]:
-            min_val = float(df[col].min())
-            max_val = float(df[col].max())
-            mean_val = float(df[col].mean())
-            input_val = st.number_input(col.strip(), min_value=min_val, max_value=max_val, value=mean_val)
-            input_data[col] = input_val
+st.markdown("Provide patient information below to predict technique survival level.")
 
-# === Prediction Button ===
-st.divider()
-if st.button("🚀 Predict Technique Survival Level"):
-    input_df = pd.DataFrame([input_data])
+# Categorical options mapping
+gender_map = {"Male": 1, "Female": 2}
+urban_map = {"Urban": 2, "Rural": 1}
+transplant_map = {True: 1, False: 0}
 
-    # Apply Label Encoding
-    for col in categorical_cols:
-        input_df[col] = le_dict[col].transform(input_df[col])
+# Define the list of input fields (simplified demo — expand as needed)
+categorical_fields = {
+    "Gender": list(gender_map.keys()),
+    "Rural_or_Urban_Origin": list(urban_map.keys()),
+}
 
-    # Align columns
-    input_df = input_df[X.columns]
+binary_fields = [
+    "transplant_before_dialysis", "Diabetes", "Hypertension", "Heart_Disease",
+    "Gout", "Cancer", "Pneumothorax", "Psychiatric_disorder",
+    "Diuretic", "ACEI_ARB", "Icodextrin", "Autonomy"
+]
 
-    # Scale
+numerical_fields = [
+    "Age", "BMI", "Hemoglobin", "Albumin", "Residual_diuresis", "Creatinine_clearance"
+]
+
+# Create input form
+with st.form("prediction_form"):
+    st.subheader("📋 Patient Input")
+
+    col1, col2 = st.columns(2)
+
+    inputs = {}
+
+    # Handle categorical features
+    with col1:
+        inputs["Gender"] = gender_map[st.selectbox("Gender", categorical_fields["Gender"])]
+        inputs["Rural_or_Urban_Origin"] = urban_map[st.selectbox("Urban or Rural Origin", categorical_fields["Rural_or_Urban_Origin"])]
+    
+    # Handle binary features
+    for i, field in enumerate(binary_fields):
+        col = col1 if i % 2 == 0 else col2
+        inputs[field] = transplant_map[col.checkbox(field.replace("_", " ").title())]
+
+    # Handle numerical features
+    for i, field in enumerate(numerical_fields):
+        col = col1 if i % 2 == 0 else col2
+        inputs[field] = col.number_input(field.replace("_", " ").title(), step=0.1)
+
+    # Submit button
+    submitted = st.form_submit_button("🔍 Predict")
+
+# Make prediction
+if submitted:
+    input_df = pd.DataFrame([inputs])
+
+    # Scale the input using the pre-fitted scaler
     input_scaled = scaler.transform(input_df)
 
-    # Predict
     prediction = model.predict(input_scaled)[0]
-    st.success(f"🎯 **Predicted Technique Survival Level: {prediction}**")
+
+    st.success(f"🎉 Predicted Technique Survival Level: **{prediction}**")
