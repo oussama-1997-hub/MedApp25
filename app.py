@@ -141,16 +141,16 @@ with st.form("patient_form"):
                 locals()[col] = int(val)
 
   # 🧩 Multi-category inputs
-c1, c2 = st.columns(2)
-for i, col in enumerate(multi_cat_cols):
-    with (c1 if i % 2 == 0 else c2):
-        options = sorted(df[col].dropna().unique().tolist())
-        default_val = options[0] if options else None
-        locals()[col] = st.selectbox(
-            col.strip().replace("_", " ").title(),
-            options,
-            index=options.index(default_val) if default_val in options else 0
-        )
+    c1, c2 = st.columns(2)
+    for i, col in enumerate(multi_cat_cols):
+        with (c1 if i % 2 == 0 else c2):
+            options = sorted(df[col].dropna().unique().tolist())
+            default_val = options[0] if options else None
+            locals()[col] = st.selectbox(
+                col.strip().replace("_", " ").title(),
+                options,
+                index=options.index(default_val) if default_val in options else 0
+            )
 
 
 submitted = st.form_submit_button("🔍 Predict")
