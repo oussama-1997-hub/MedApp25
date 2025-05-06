@@ -67,8 +67,6 @@ def user_input_features():
 input_dict = user_input_features()
 
 # =======================
-# Prediction
-# =======================
 if st.button("Predict"):
     # Create input DataFrame
     input_df = pd.DataFrame([input_dict])
@@ -76,6 +74,9 @@ if st.button("Predict"):
     # Encode using stored LabelEncoders
     for col in categorical_cols:
         input_df[col] = le_dict[col].transform(input_df[col].astype(str))
+    
+    # Reorder columns to match training data
+    input_df = input_df[X.columns]  # <- This line ensures same order and names
     
     # Scale input
     input_scaled = scaler.transform(input_df)
