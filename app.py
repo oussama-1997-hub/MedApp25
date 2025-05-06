@@ -21,101 +21,106 @@ st.dataframe(df.head())
 st.title("Technique Survival Level Prediction")
 st.markdown("Enter patient information below to predict the **technique survival level**.")
 
-# =======================
-# Preprocessing
-# =======================
-# Define target and categorical columns
-# Define columns
-target = 'technique_survival_levels'
+df_original = df.copy()
+
+# ========== ENCODING ==========
 categorical_cols = ['Gender ', 'Rural_or_Urban_Origin', 'scholarship level ', 'Indigent_Coverage_CNAM',
                     'Smoking', 'Diabetes', 'Hypertension', 'Heart_Disease', 'Gout', 'Cancer',
                     'Pneumothorax', 'Psychiatric_disorder', 'Initial_nephropathy',
                     'Technique', 'Permeability_type', 'Diuretic', 'ACEI_ARB', 'Icodextrin', 'Autonomy']
 
-# === Encoding ===
-df_encoded = df.copy()
 le_dict = {}
+df_encoded = df.copy()
 
 for col in categorical_cols:
     le = LabelEncoder()
     df_encoded[col] = le.fit_transform(df_encoded[col])
     le_dict[col] = le
 
-# === Prepare data ===
-X = df_encoded.drop(columns=[target])
-y = df_encoded[target]
+# ========== CORRELATION MATRIX ==========
+corr = df_encoded.corr(numeric_only=True)
+
+# ========== FEATURES AND TARGET ==========
+X = df_encoded.drop(columns=['technique_survival_levels'])
+y = df_encoded['technique_survival_levels']
 
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-model = DecisionTreeClassifier(random_state=42)
-model.fit(X_scaled, y)
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, stratify=y, random_state=42)
 
-# Load the trained model and scaler
-with open("model.pkl", "rb") as f:
-    model = pickle.load(f)
+# ========== TRAIN DECISION TREE ==========
+clf = DecisionTreeClassifier(random_state=42)
+clf.fit(X_train, y_train)
 
-with open("scaler.pkl", "rb") as f:
-    scaler = pickle.load(f)
+# ========== STREAMLIT APP ==========
+st.title("🎯 Technique Survival Predictor")
 
-st.title("🎯 Technique Survival Level Predictor")
+st.markdown("Provide the patient information below to predict the technique survival level.")
 
-st.markdown("Provide patient information below to predict technique survival level.")
+input_data = {}
 
-# Categorical options mapping
-gender_map = {"Male": 1, "Female": 2}
-urban_map = {"Urban": 2, "Rural": 1}
-transplant_map = {True: 1, False: 0}
+# === CATEGORICAL FIELDS (Decoded) ===
+gender = st.selectbox("Gender", ['Male', 'Female'])
+input_data['Gender '] = gender
 
-# Define the list of input fields (simplified demo — expand as needed)
-categorical_fields = {
-    "Gender": list(gender_map.keys()),
-    "Rural_or_Urban_Origin": list(urban_map.keys()),
-}
+rural_urban = st.selectbox("Residence", ['Urban', 'Rural'])
+input_data['Rural_or_Urban_Origin'] = rural_urban
 
-binary_fields = [
-    "transplant_before_dialysis", "Diabetes", "Hypertension", "Heart_Disease",
-    "Gout", "Cancer", "Pneumothorax", "Psychiatric_disorder",
-    "Diuretic", "ACEI_ARB", "Icodextrin", "Autonomy"
-]
+transplant = st.checkbox("Transplanted Before Dialysis")
+input_data['transplant_before_dialysis'] = 1 if transplant else 0
 
-numerical_fields = [
-    "Age", "BMI", "Hemoglobin", "Albumin", "Residual_diuresis", "Creatinine_clearance"
-]
+# === BOOLEAN FIELDS ===
+bool_cols = ['Smoking', 'Diabetes', 'Hypertension', 'Heart_Disease', 'Gout',
+             'Cancer', 'Pneumothorax', 'Psychiatric_disorder', 'Diuretic',
+             'ACEI_ARB', 'Icodextrin', 'Autonomy', 'Indigent_Coverage_CNAM']
 
-# Create input form
-with st.form("prediction_form"):
-    st.subheader("📋 Patient Input")
+col1, col2, col3 = st.columns(3)
+for i, col in enumerate(bool_cols):
+    with [col1, col2, col3][i % 3]:
+        input_data[col] = 1 if st.checkbox(col.replace("_", " ")) else 0
 
-    col1, col2 = st.columns(2)
+# === REMAINING CATEGORICAL FIELDS ===
+cat_cols = ['scholarship level ', 'Initial_nephropathy', 'Technique', 'Permeability_type']
+for col in cat_cols:
+    options = df_original[col].unique().tolist()
+    selected = st.selectbox(col.strip(), options)
+    input_data[col] = selected
 
-    inputs = {}
+# === NUMERICAL FIELDS ===
+numerical_cols = [col for col in df.columns if col not in categorical_cols + ['technique_survival_levels']]
+for col in numerical_cols:
+    input_data[col] = st.number_input(f"{col}", value=float(df[col].mean()))
 
-    # Handle categorical features
-    with col1:
-        inputs["Gender"] = gender_map[st.selectbox("Gender", categorical_fields["Gender"])]
-        inputs["Rural_or_Urban_Origin"] = urban_map[st.selectbox("Urban or Rural Origin", categorical_fields["Rural_or_Urban_Origin"])]
-    
-    # Handle binary features
-    for i, field in enumerate(binary_fields):
-        col = col1 if i % 2 == 0 else col2
-        inputs[field] = transplant_map[col.checkbox(field.replace("_", " ").title())]
+# ========== PREDICTION ==========
+if st.button("🔍 Predict Technique Survival Level"):
+    # Encode the inputs
+    input_df = pd.DataFrame([input_data])
 
-    # Handle numerical features
-    for i, field in enumerate(numerical_fields):
-        col = col1 if i % 2 == 0 else col2
-        inputs[field] = col.number_input(field.replace("_", " ").title(), step=0.1)
+    for col in categorical_cols:
+        if col in input_df.columns:
+            le = le_dict[col]
+            input_df[col] = le.transform(input_df[col])
 
-    # Submit button
-    submitted = st.form_submit_button("🔍 Predict")
+    # Scale input
+    input_scaled = scaler.transform(input_df[X.columns])
 
-# Make prediction
-if submitted:
-    input_df = pd.DataFrame([inputs])
+    prediction = clf.predict(input_scaled)[0]
+    st.success(f"🎯 Predicted Technique Survival Level: **{prediction}**")
 
-    # Scale the input using the pre-fitted scaler
-    input_scaled = scaler.transform(input_df)
+    # Optional: Show class probabilities
+    probs = clf.predict_proba(input_scaled)[0]
+    st.write("Prediction Probabilities:")
+    st.bar_chart(pd.Series(probs, name="Probability"))
 
-    prediction = model.predict(input_scaled)[0]
-
-    st.success(f"🎉 Predicted Technique Survival Level: **{prediction}**")
+# ========== OPTIONAL: CONFUSION MATRIX ==========
+with st.expander("Show Confusion Matrix and Model Evaluation"):
+    st.subheader("Confusion Matrix")
+    y_pred = clf.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+    st.write("Accuracy:", accuracy_score(y_test, y_pred))
+    st.write("Classification Report:")
+    st.text(classification_report(y_test, y_pred))
+    fig, ax = plt.subplots()
+    sns.heatmap(cm, annot=True, fmt='g', cmap='Blues', ax=ax)
+    st.pyplot(fig)
