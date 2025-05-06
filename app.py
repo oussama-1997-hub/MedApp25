@@ -74,20 +74,18 @@ binary_cols = [
     c for c in df.columns
     if set(df[c].dropna().unique()) <= {0,1} and c != target
 ]
-
-# Multi-category features
+# Multicategory features
 multi_cat_cols = [
     'scholarship level ', 'Initial_nephropathy',
     'Technique', 'Permeability_type', 'Germ'
 ]
-
-# Two-value categorical mappings
+# Two‐value coded as 1/2
 gender_col = 'Gender '
 origin_col = 'Rural_or_Urban_Origin'
 gender_map = {"Male": 1, "Female": 2}
 origin_map = {"Urban": 2, "Rural": 1}
 
-# Numeric features: all except binary, multi-cat, gender/origin, and the removed ones
+# Numeric: everything else except target and the two we remove from input
 removed = {'BMI_one_year', 'RRF_one_year', target}
 numeric_cols = [
     c for c in df.columns
@@ -100,31 +98,32 @@ numeric_cols = [
 # ── 4) Encode & Train Model ──────────────────────────────────────────────────
 df_enc = df.copy()
 
-# Map gender & origin (they’re already 1/2 in original)
-# Label‑encode multi-category
+# Label‐encode multicategory
 le_dict = {}
 for col in multi_cat_cols:
     le = LabelEncoder()
     df_enc[col] = le.fit_transform(df_enc[col].astype(str))
     le_dict[col] = le
 
-# Prepare X, y
+# Prepare X and y
 X = df_enc.drop(columns=[target])
 y = df_enc[target]
 
+# Scale
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
+# Train model
 clf = DecisionTreeClassifier(random_state=42)
 clf.fit(X_scaled, y)
 
-# ── 5) Page Header ─────────────────────────────────────────────────────────────
+# ── 5) Header ─────────────────────────────────────────────────────────────────
 st.markdown("<h1 style='text-align:center;color:#2E86C1;'>🎯 Technique Survival Predictor</h1>",
             unsafe_allow_html=True)
 st.markdown(
     "<p style='text-align:center;color:#566573;'>"
-    "Fill out your patient’s data below and click “Predict” to see if the peritoneal dialysis "
-    "technique is likely to succeed for at least two years."
+    "Complete your patient’s details below, then click “Predict” to see if the peritoneal "
+    "dialysis technique is likely to succeed ≥2 years."
     "</p>", unsafe_allow_html=True
 )
 
@@ -134,109 +133,88 @@ with st.form("patient_form"):
     with st.expander("👤 Demographics", expanded=True):
         c1, c2 = st.columns(2)
         with c1:
-            age = st.number_input(
-                "Age (years)", min_value=0, max_value=120,
-                value=int(df['Age'].mean()), help="Enter patient’s age"
-            )
+            age = st.number_input("Age (years)", min_value=0, max_value=120,
+                                  value=int(df['Age'].mean()))
         with c2:
-            gender = st.selectbox(
-                "Gender", list(gender_map.keys()),
-                help="Select patient’s gender"
-            )
+            gender = st.selectbox("Gender", list(gender_map.keys()))
         c1, c2 = st.columns(2)
         with c1:
-            origin = st.selectbox(
-                "Residence", list(origin_map.keys()),
-                help="Urban or Rural origin"
-            )
+            origin = st.selectbox("Residence", list(origin_map.keys()))
         with c2:
-            transpl = st.checkbox(
-                "Transplant Before Dialysis",
-                help="Check if patient had kidney transplant before starting PD"
-            )
+            transpl = st.checkbox("Transplant Before Dialysis")
 
     # Socioeconomic
     with st.expander("💼 Socioeconomic Status", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
-            schol = st.selectbox(
-                "Scholarship Level",
-                df['scholarship level '].dropna().unique().tolist(),
-                help="Educational attainment"
-            )
+            schol = st.selectbox("Scholarship Level",
+                                 df['scholarship level '].dropna().unique().tolist())
         with c2:
-            indig = st.checkbox(
-                "Indigent CNAM Coverage",
-                help="Check if patient is under indigent CNAM"
-            )
+            indig = st.checkbox("Indigent CNAM Coverage")
 
-    # Medical History (binary)
+    # Medical History
     with st.expander("🩺 Medical History", expanded=False):
         c1, c2 = st.columns(2)
         for i, col in enumerate(binary_cols):
             with (c1 if i % 2 == 0 else c2):
-                val = st.checkbox(
-                    col.replace("_", " ").title(),
-                    help=f"Check if patient has {col.replace('_', ' ').lower()}"
-                )
+                val = st.checkbox(col.replace("_", " ").title())
                 locals()[col] = int(val)
 
     # Dialysis Parameters
     with st.expander("💧 Dialysis Parameters", expanded=False):
-        # Numeric inputs
+        # Numeric
         c1, c2 = st.columns(2)
         for i, col in enumerate(numeric_cols):
             with (c1 if i % 2 == 0 else c2):
                 locals()[col] = st.number_input(
                     col.replace("_", " ").title(),
-                    value=float(df[col].mean()),
-                    help=f"Enter patient’s {col.replace('_', ' ')}"
+                    value=float(df[col].mean())
                 )
-        # Multi-category inputs
+        # Multicategory
         c1, c2 = st.columns(2)
         for i, col in enumerate(multi_cat_cols):
             with (c1 if i % 2 == 0 else c2):
                 locals()[col] = st.selectbox(
                     col.strip(),
-                    df[col].dropna().unique().tolist(),
-                    help=f"Select patient’s {col.strip().lower()}"
+                    df[col].dropna().unique().tolist()
                 )
 
     submitted = st.form_submit_button("🔍 Predict")
 
-# ── 7) Predict & Interpret ────────────────────────────────────────────────────
+# ── 7) Predict & Interpret ─────────────────────────────────────────────────────
 if submitted:
-    # Gather inputs into dict
-    inp = {
-        'Age': age,
-        gender_col: gender_map[gender],
-        origin_col: origin_map[origin],
-        'transplant_before_dialysis': int(transpl),
-        'scholarship level ': schol,
-        'Indigent_Coverage_CNAM': int(indig)
-    }
-    # Medical history
-    for col in binary_cols:
-        inp[col] = locals()[col]
-    # Dialysis numeric
-    for col in numeric_cols:
-        inp[col] = locals()[col]
-    # Dialysis multi-cat
-    for col in multi_cat_cols:
-        inp[col] = locals()[col]
+    # Build input dict
+    inp = {}
+    for col in X.columns:
+        if col == 'Age':
+            inp[col] = age
+        elif col == gender_col:
+            inp[col] = gender_map[gender]
+        elif col == origin_col:
+            inp[col] = origin_map[origin]
+        elif col in numeric_cols:
+            inp[col] = locals()[col]
+        elif col in binary_cols:
+            inp[col] = locals()[col]
+        elif col in multi_cat_cols:
+            inp[col] = locals()[col]
+        else:
+            # Just in case
+            inp[col] = df[col].mode()[0]
 
-    # Build DataFrame, encode & scale
+    # DataFrame & encode multi-cat
     input_df = pd.DataFrame([inp])
     for col in multi_cat_cols:
         input_df[col] = le_dict[col].transform(input_df[col].astype(str))
-    input_scaled = scaler.transform(input_df[X.columns])
+
+    # Reindex and scale
+    input_df = input_df.reindex(columns=X.columns)
+    input_scaled = scaler.transform(input_df)
 
     # Predict
     pred = clf.predict(input_scaled)[0]
     st.success(f"**Predicted Technique Survival Level: {pred}**")
-
-    # Add brief interpretation
     if pred == 2:
-        st.info("✅ This technique is predicted to succeed for **at least 2 years** (good outcome).")
+        st.info("✅ Likely to succeed for **≥2 years**.")
     else:
-        st.warning("⚠️ This technique is predicted **not** to succeed beyond 2 years.")
+        st.warning("⚠️ Unlikely to succeed beyond 2 years.")
