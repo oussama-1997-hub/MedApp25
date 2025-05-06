@@ -16,47 +16,69 @@ df = pd.read_excel(url, engine="openpyxl")
 st.write("Here is the dataset:")
 st.dataframe(df.head())
 
-# 1. Separate features (X) and target (y)
-X = df.iloc[:, :-1]  # All columns except the last one (target column)
-y = df.iloc[:, -1]   # The last column (target)
+st.title("Technique Survival Level Prediction")
+st.markdown("Enter patient information below to predict the **technique survival level**.")
 
-# 2. Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# =======================
+# Preprocessing
+# =======================
+categorical_cols = ['Gender ', 'Rural_or_Urban_Origin', 'scholarship level ', 'Indigent_Coverage_CNAM',
+                    'Smoking', 'Diabetes', 'Hypertension', 'Heart_Disease', 'Gout', 'Cancer',
+                    'Pneumothorax', 'Psychiatric_disorder', 'Initial_nephropathy',
+                    'Technique', 'Permeability_type', 'Diuretic', 'ACEI_ARB', 'Icodextrin', 'Autonomy']
 
-# 3. Train a Decision Tree Classifier
-clf = DecisionTreeClassifier(max_depth=None, min_samples_split=2, criterion='gini', random_state=42)
+df_encoded = df.copy()
+le_dict = {}
+
+for col in categorical_cols:
+    le = LabelEncoder()
+    df_encoded[col] = le.fit_transform(df_encoded[col].astype(str))
+    le_dict[col] = le
+
+# Split features and target
+X = df_encoded.drop(columns=['technique_survival_levels'])
+y = df_encoded['technique_survival_levels']
+
+# Scale features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42, stratify=y)
+
+# Train model
+clf = DecisionTreeClassifier(random_state=42)
 clf.fit(X_train, y_train)
 
-# 4. Predict the target using the trained model
-y_pred = clf.predict(X_test)
+# =======================
+# Streamlit Form
+# =======================
+st.sidebar.header("Input Features")
 
-# 5. Evaluate the model (accuracy, precision, recall, F1 score)
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred, average='weighted')
-recall = recall_score(y_test, y_pred, average='weighted')
-f1 = f1_score(y_test, y_pred, average='weighted')
+def user_input_features():
+    input_data = {}
+    for col in categorical_cols:
+        options = df[col].dropna().unique()
+        selected = st.sidebar.selectbox(col.strip(), sorted(options))
+        input_data[col] = selected
+    return input_data
 
-# Display model evaluation metrics
-st.write(f"Model Accuracy: {accuracy:.2f}")
-st.write(f"Model Precision: {precision:.2f}")
-st.write(f"Model Recall: {recall:.2f}")
-st.write(f"Model F1 Score: {f1:.2f}")
+input_dict = user_input_features()
 
-# Collect user input for features using Streamlit text_input
-user_inputs = {}
+# =======================
+# Prediction
+# =======================
+if st.button("Predict"):
+    # Create input DataFrame
+    input_df = pd.DataFrame([input_dict])
+    
+    # Encode using stored LabelEncoders
+    for col in categorical_cols:
+        input_df[col] = le_dict[col].transform(input_df[col].astype(str))
+    
+    # Scale input
+    input_scaled = scaler.transform(input_df)
 
-for feature in X.columns:
-    user_inputs[feature] = st.number_input(f"Enter {feature}", value=0.0)
-
-# Convert the user inputs to a DataFrame (needed for prediction)
-user_inputs_df = pd.DataFrame(user_inputs, index=[0])
-
-# 6. Make prediction based on user inputs
-if st.button("Predict Target"):
-    prediction = clf.predict(user_inputs_df)
-    st.write(f"Predicted Target: {prediction[0]}")
-
-# Optionally, you can display a classification report
-if st.button("Show Classification Report"):
-    report = classification_report(y_test, y_pred)
-    st.text(report)
+    # Predict
+    prediction = clf.predict(input_scaled)[0]
+    st.success(f"Predicted Technique Survival Level: {prediction}")
