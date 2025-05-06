@@ -6,20 +6,68 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-# Streamlit app title
-st.title("Prediction of Target Using Decision Tree 2222")
-st.write("Please fill in the details below to predict the target.")
+# ─── PAGE CONFIG ────────────────────────────────────────────────────────────────
+st.set_page_config(page_title="Technique Survival Predictor", layout="wide")
 
-# Load the data
-url = "https://raw.githubusercontent.com/oussama-1997-hub/MedApp25/main/BD%20sans%20encod%20stand.xlsx"
-df = pd.read_excel(url, engine="openpyxl")
+# ─── STYLING ────────────────────────────────────────────────────────────────────
+st.markdown(
+    """
+    <style>
+    /* Title */
+    .big-title {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #2E86C1;
+        text-align: center;
+        margin-bottom: 0.25rem;
+    }
+    /* Subtitle */
+    .subtitle {
+        font-size: 1.2rem;
+        color: #566573;
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+    }
+    /* Container around the dataframe */
+    .df-container {
+        background-color: #F2F4F4;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-# Display the data in the app (optional)
-st.write("Here is the dataset:")
-st.dataframe(df.head())
+# ─── HEADER & INSTRUCTIONS ─────────────────────────────────────────────────────
+st.markdown('<div class="big-title">Technique Survival Level Predictor</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="subtitle">'
+    'Enter your patient’s details below. '
+    'Once complete, click **Predict** to see their technique survival level.'
+    '</div>',
+    unsafe_allow_html=True
+)
 
-st.title("Technique Survival Level Prediction")
-st.markdown("Enter patient information below to predict the **technique survival level**.")
+# ─── LOAD & DISPLAY DATASET SAMPLE ──────────────────────────────────────────────
+@st.cache_data
+def load_data():
+    url = (
+        "https://raw.githubusercontent.com/"
+        "oussama-1997-hub/MedApp25/main/"
+        "BD%20sans%20encod%20stand.xlsx"
+    )
+    return pd.read_excel(url, engine="openpyxl")
+
+df = load_data()
+
+with st.expander("📊 View a Sample of the Dataset", expanded=False):
+    st.markdown("**First 5 rows from the dataset:**")
+    st.markdown('<div class="df-container">', unsafe_allow_html=True)
+    st.dataframe(df.head(), use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+  -----------------------------------------------------------------------------------
 
 target = 'technique_survival_levels'
 
