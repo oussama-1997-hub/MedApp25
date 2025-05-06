@@ -140,8 +140,8 @@ with st.form("patient_form"):
                 val = st.checkbox(col.replace("_"," ").title())
                 locals()[col] = int(val)
 
-    # Dialysis Parameters
-   with st.expander("💧 Dialysis Parameters", expanded=False):
+ # 💧 Dialysis Parameters
+with st.expander("💧 Dialysis Parameters", expanded=False):
     dialysis_nums = [
         'BMI_start_PD', 'Urine_output_start', 'Initial_RRF',
         'Initial_UF', 'Initial_albumin', 'Initial_Hb', 'Nbre_peritonitis'
@@ -155,17 +155,18 @@ with st.form("patient_form"):
                 value=float(df[col].mean())
             )
 
-    # Ensure selectboxes show full range of values from 0 to max existing
+    # Ensure selectboxes show full range of values from 0 to max(existing value)
     categorical_cols = ['Permeability_type', 'Germ']
     d1, d2 = st.columns(2)
     for i, col in enumerate(categorical_cols):
         with (d1 if i % 2 == 0 else d2):
             max_val = int(df[col].max())
             all_possible_values = list(range(0, max_val + 1))
+            default_val = int(df[col].mode()[0]) if not df[col].mode().empty else 0
             locals()[col] = st.selectbox(
                 col.replace("_", " ").title(),
                 all_possible_values,
-                index=all_possible_values.index(int(df[col].mode()[0]))
+                index=all_possible_values.index(default_val)
             )
 
     submitted = st.form_submit_button("🔍 Predict")
