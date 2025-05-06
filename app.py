@@ -51,9 +51,6 @@ X_scaled = scaler.fit_transform(X)
 model = DecisionTreeClassifier(random_state=42)
 model.fit(X_scaled, y)
 
-# Set Streamlit page configuration (must be first Streamlit command)
-st.set_page_config(page_title="Technique Survival Predictor", layout="wide")
-
 # Load the trained model and scaler
 with open("model.pkl", "rb") as f:
     model = pickle.load(f)
