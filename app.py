@@ -69,62 +69,45 @@ with st.expander("📊 View a Sample of the Dataset", expanded=False):
 target = 'technique_survival_levels'
 
 # ── 3) Identify columns ────────────────────────────────────────────────────────
-# Binary (0/1) features
-binary_cols = [
-    c for c in df.columns
-    if set(df[c].dropna().unique()) <= {0,1} and c != target
-]
-# Multicategory features
-multi_cat_cols = [
-    'scholarship level ', 'Initial_nephropathy',
-    'Technique', 'Permeability_type', 'Germ'
-]
-# Two‐value coded as 1/2
+binary_cols = [c for c in df.columns if set(df[c].dropna().unique()) <= {0,1} and c != target]
+multi_cat_cols = ['scholarship level ', 'Initial_nephropathy', 'Technique', 'Permeability_type', 'Germ']
 gender_col = 'Gender '
 origin_col = 'Rural_or_Urban_Origin'
-gender_map = {"Male": 1, "Female": 2}
-origin_map = {"Urban": 2, "Rural": 1}
+gender_map = {"Male":1, "Female":2}
+origin_map = {"Urban":2, "Rural":1}
+removed = {'BMI_one_year','RRF_one_year', target}
+numeric_cols = [c for c in df.columns 
+                if c not in binary_cols 
+                and c not in multi_cat_cols 
+                and c not in {gender_col, origin_col} 
+                and c not in removed]
 
-# Numeric: everything else except target and the two we remove from input
-removed = {'BMI_one_year', 'RRF_one_year', target}
-numeric_cols = [
-    c for c in df.columns
-    if c not in binary_cols
-    and c not in multi_cat_cols
-    and c not in {gender_col, origin_col}
-    and c not in removed
-]
-
-# ── 4) Encode & Train Model ──────────────────────────────────────────────────
+# ── 4) Train Model ─────────────────────────────────────────────────────────────
 df_enc = df.copy()
-
-# Label‐encode multicategory
+# label‑encode multi-cat
 le_dict = {}
 for col in multi_cat_cols:
     le = LabelEncoder()
     df_enc[col] = le.fit_transform(df_enc[col].astype(str))
     le_dict[col] = le
-
-# Prepare X and y
 X = df_enc.drop(columns=[target])
 y = df_enc[target]
-
-# Scale
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
-
-# Train model
 clf = DecisionTreeClassifier(random_state=42)
 clf.fit(X_scaled, y)
 
 # ── 5) Header ─────────────────────────────────────────────────────────────────
-st.markdown("<h1 style='text-align:center;color:#2E86C1;'>🎯 Technique Survival Predictor</h1>",
-            unsafe_allow_html=True)
+st.markdown(
+    "<h1 style='text-align:center;color:#2E86C1;'>🎯 Technique Survival Predictor</h1>",
+    unsafe_allow_html=True
+)
 st.markdown(
     "<p style='text-align:center;color:#566573;'>"
-    "Complete your patient’s details below, then click “Predict” to see if the peritoneal "
-    "dialysis technique is likely to succeed ≥2 years."
-    "</p>", unsafe_allow_html=True
+    "Fill out the patient’s data below, then click “Predict” to see whether the "
+    "peritoneal dialysis technique is predicted to succeed ≥2 years."
+    "</p>",
+    unsafe_allow_html=True
 )
 
 # ── 6) Input Form ──────────────────────────────────────────────────────────────
@@ -152,7 +135,7 @@ with st.form("patient_form"):
         with c2:
             indig = st.checkbox("Indigent CNAM Coverage")
 
-    # Medical History
+    # Medical History (binary)
     with st.expander("🩺 Medical History", expanded=False):
         c1, c2 = st.columns(2)
         for i, col in enumerate(binary_cols):
@@ -170,7 +153,7 @@ with st.form("patient_form"):
                     col.replace("_", " ").title(),
                     value=float(df[col].mean())
                 )
-        # Multicategory
+        # Multi-category
         c1, c2 = st.columns(2)
         for i, col in enumerate(multi_cat_cols):
             with (c1 if i % 2 == 0 else c2):
@@ -179,11 +162,12 @@ with st.form("patient_form"):
                     df[col].dropna().unique().tolist()
                 )
 
+    # The **submit button** must be here, inside the form:
     submitted = st.form_submit_button("🔍 Predict")
 
-# ── 7) Predict & Interpret ─────────────────────────────────────────────────────
+# ── 7) Prediction & Interpretation ─────────────────────────────────────────────
 if submitted:
-    # Build input dict
+    # Build input dict matching X.columns
     inp = {}
     for col in X.columns:
         if col == 'Age':
@@ -192,6 +176,8 @@ if submitted:
             inp[col] = gender_map[gender]
         elif col == origin_col:
             inp[col] = origin_map[origin]
+        elif col == 'transplant_before_dialysis':
+            inp[col] = int(transpl)
         elif col in numeric_cols:
             inp[col] = locals()[col]
         elif col in binary_cols:
@@ -199,22 +185,19 @@ if submitted:
         elif col in multi_cat_cols:
             inp[col] = locals()[col]
         else:
-            # Just in case
             inp[col] = df[col].mode()[0]
 
-    # DataFrame & encode multi-cat
+    # DataFrame + encode multi-cat
     input_df = pd.DataFrame([inp])
     for col in multi_cat_cols:
         input_df[col] = le_dict[col].transform(input_df[col].astype(str))
 
-    # Reindex and scale
     input_df = input_df.reindex(columns=X.columns)
     input_scaled = scaler.transform(input_df)
-
-    # Predict
     pred = clf.predict(input_scaled)[0]
+
     st.success(f"**Predicted Technique Survival Level: {pred}**")
     if pred == 2:
-        st.info("✅ Likely to succeed for **≥2 years**.")
+        st.info("✅ This technique is predicted to succeed for **at least 2 years**.")
     else:
-        st.warning("⚠️ Unlikely to succeed beyond 2 years.")
+        st.warning("⚠️ This technique is predicted **not** to succeed beyond 2 years.")
