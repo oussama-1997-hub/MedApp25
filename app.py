@@ -82,15 +82,13 @@ origin_col = 'Rural_or_Urban_Origin'
 gender_map = {"Male":1, "Female":2}
 origin_map = {"Urban":2, "Rural":1}
 
-# Encode multi-category
-le_dict = {}
 df_enc = df_model.copy()
+le_dict = {}
 for col in multi_cat_cols:
     le = LabelEncoder()
     df_enc[col] = le.fit_transform(df_enc[col].astype(str))
     le_dict[col] = le
 
-# Features & scaling
 X = df_enc.drop(columns=[target])
 y = df_enc[target]
 scaler = StandardScaler().fit(X)
@@ -99,73 +97,75 @@ clf = DecisionTreeClassifier(random_state=42).fit(X_scaled, y)
 
 # ─── 5) INPUT FORM ───────────────────────────────────────────────────────────────
 st.markdown("### 📝 Patient Data Input")
-form = st.form("patient_form")
+with st.form("patient_form"):
+    # Demographics
+    with st.expander("👤 Demographics", expanded=True):
+        c1, c2 = st.columns(2)
+        with c1:
+            age = st.number_input("Age (years)", min_value=0, max_value=120,
+                                  value=int(df['Age'].mean()))
+        with c2:
+            gender = st.selectbox("Gender", list(gender_map.keys()))
+        c1, c2 = st.columns(2)
+        with c1:
+            origin = st.selectbox("Residence", list(origin_map.keys()))
+        with c2:
+            transpl = st.checkbox("Transplant before Dialysis")
 
-# Demographics
-with form.expander("👤 Demographics", expanded=True):
-    c1, c2 = form.columns(2)
-    with c1:
-        age = form.number_input("Age (years)", min_value=0, max_value=120, value=int(df['Age'].mean()))
-    with c2:
-        gender = form.selectbox("Gender", list(gender_map.keys()))
-    c1, c2 = form.columns(2)
-    with c1:
-        origin = form.selectbox("Residence", list(origin_map.keys()))
-    with c2:
-        transpl = form.checkbox("Transplant before Dialysis")
+    # Socioeconomic
+    with st.expander("💼 Socioeconomic Status", expanded=False):
+        c1, c2 = st.columns(2)
+        with c1:
+            schol = st.selectbox("Scholarship Level",
+                                 sorted(df['scholarship level '].dropna().unique().tolist()))
+        with c2:
+            indig = st.checkbox("Indigent CNAM Coverage")
 
-# Socioeconomic
-with form.expander("💼 Socioeconomic Status", expanded=False):
-    c1, c2 = form.columns(2)
-    with c1:
-        schol_opts = sorted(df['scholarship level '].unique().tolist())
-        schol = form.selectbox("Scholarship Level", schol_opts)
-    with c2:
-        indig = form.checkbox("Indigent CNAM Coverage")
+    # Medical History
+    with st.expander("🩺 Medical History", expanded=False):
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(binary_cols):
+            with (c1 if i%2==0 else c2):
+                val = st.checkbox(col.replace("_"," ").title())
+                locals()[col] = int(val)
 
-# Medical History
-with form.expander("🩺 Medical History", expanded=False):
-    c1, c2 = form.columns(2)
-    for i, col in enumerate(binary_cols):
-        with (c1 if i%2==0 else c2):
-            val = form.checkbox(col.replace("_"," ").title())
-            locals()[col] = int(val)
+    # Dialysis Parameters
+    with st.expander("💧 Dialysis Parameters", expanded=False):
+        dialysis_nums = [
+            'BMI_start_PD', 'Urine_output_start', 'Initial_RRF',
+            'Initial_UF', 'Initial_albumin', 'Initial_Hb', 'Nbre_peritonitis'
+        ]
+        d1, d2 = st.columns(2)
+        for i, col in enumerate(dialysis_nums):
+            with (d1 if i%2==0 else d2):
+                locals()[col] = st.number_input(
+                    col.replace("_"," ").title(),
+                    value=float(df[col].mean())
+                )
+        d1, d2 = st.columns(2)
+        for i, col in enumerate(['Permeability_type', 'Germ']):
+            with (d1 if i%2==0 else d2):
+                locals()[col] = st.selectbox(
+                    col.replace("_"," ").title(),
+                    sorted(df[col].dropna().unique().tolist())
+                )
 
-# Dialysis Parameters
-with form.expander("💧 Dialysis Parameters", expanded=False):
-    dialysis_nums = ['BMI_start_PD','Urine_output_start','Initial_RRF',
-                     'Initial_UF','Initial_albumin','Initial_Hb','Nbre_peritonitis']
-    d1, d2 = form.columns(2)
-    for i, col in enumerate(dialysis_nums):
-        with (d1 if i%2==0 else d2):
-            locals()[col] = form.number_input(col.replace("_"," ").title(), value=float(df[col].mean()))
-    d1, d2 = form.columns(2)
-    pt_opts = sorted(df['Permeability_type'].unique().tolist())
-    germ_opts = sorted(df['Germ'].unique().tolist())
-    with d1:
-        locals()['Permeability_type'] = form.selectbox("Permeability Type", pt_opts)
-    with d2:
-        locals()['Germ'] = form.selectbox("Germ", germ_opts)
+    submitted = st.form_submit_button("🔍 Predict")
 
-# Submit button
-submitted = form.form_submit_button("🔍 Predict")
-
-# ─── 6) MAKE PREDICTION ──────────────────────────────────────────────────────────
 if submitted:
-    inp = {
-        'Age': age,
-        gender_col: gender_map[gender],
-        origin_col: origin_map[origin],
-        'transplant_before_dialysis': int(transpl),
-        'scholarship level ': schol,
-        'Indigent_Coverage_CNAM': int(indig)
-    }
+    inp = {}
+    inp['Age'] = age
+    inp[gender_col] = gender_map[gender]
+    inp[origin_col] = origin_map[origin]
+    inp['transplant_before_dialysis'] = int(transpl)
+    inp['scholarship level '] = schol
+    inp['Indigent_Coverage_CNAM'] = int(indig)
     for col in binary_cols:
         inp[col] = locals()[col]
     for col in dialysis_nums:
         inp[col] = locals()[col]
-    inp['Permeability_type'] = locals()['Permeability_type']
-    inp['Germ'] = locals()['Germ']
+    for col in ['Permeability_type', 'Germ']:
+        inp[col] = locals()[col]
 
     input_df = pd.DataFrame([inp])
     for col in multi_cat_cols:
@@ -180,6 +180,5 @@ if submitted:
     else:
         st.error(f"⚠️ **Not expected to exceed 2 years** (Level {pred})")
         st.warning("Consider closer monitoring or alternative strategies for long-term success.")
-
 
 
