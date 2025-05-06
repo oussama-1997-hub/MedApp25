@@ -21,95 +21,139 @@ st.dataframe(df.head())
 st.title("Technique Survival Level Prediction")
 st.markdown("Enter patient information below to predict the **technique survival level**.")
 
-df_original = df.copy()
-
-# Target column
 target = 'technique_survival_levels'
 
-# Identify binary features (0/1)
-binary_cols = [col for col in df.columns if set(df[col].dropna().unique()) <= {0,1} and col != target]
+# -- Identify columns --
+binary_cols = [c for c in df.columns if set(df[c].dropna().unique()) <= {0,1} and c != target]
+# We’ll treat these as checkboxes (0=False, 1=True)
+multi_cat_cols = ['scholarship level ', 'Initial_nephropathy',
+                  'Technique', 'Permeability_type', 'Germ']
+# Special two‐value categorical mappings
+gender_map = {"Male": 1, "Female": 2}
+origin_map = {"Urban": 2, "Rural": 1}
 
-# Special categorical mappings
-gender_map = {1: "Male", 2: "Female"}
-rural_map = {2: "Urban", 1: "Rural"}
-
-# Define multi-category features
-multi_cat_cols = ['scholarship level ', 'Initial_nephropathy', 'Technique', 'Permeability_type', 'Germ']
-
-# Label encode all categorical for training
-le_dict = {}
+# -- Encode for model training --
 df_enc = df.copy()
-# Encode gender and ruralurban using maps
-df_enc['Gender '] = df_enc['Gender '].map({v: k for k, v in gender_map.items()})
-df_enc['Rural_or_Urban_Origin'] = df_enc['Rural_or_Urban_Origin'].map({v: k for k, v in rural_map.items()})
-# Encode multi-cat
+df_enc['Gender '] = df_enc['Gender '].map({v:k for k,v in gender_map.items()})
+df_enc['Rural_or_Urban_Origin'] = df_enc['Rural_or_Urban_Origin'].map({v:k for k,v in origin_map.items()})
+
+le_dict = {}
 for col in multi_cat_cols:
     le = LabelEncoder()
     df_enc[col] = le.fit_transform(df_enc[col].astype(str))
     le_dict[col] = le
-# Encode binary (already 0/1)
 
-# Prepare features and target
 X = df_enc.drop(columns=[target])
 y = df_enc[target]
 
-# Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# Train model
 clf = DecisionTreeClassifier(random_state=42)
 clf.fit(X_scaled, y)
 
-# Streamlit UI
+# 3) Title & Instructions
 st.title("🎯 Technique Survival Level Predictor")
-st.markdown("Provide patient data below to predict technique survival level.")
+st.write(
+    """
+    Please fill in the following **patient details**.  
+    For each field, choose or enter the option that **best matches** your patient’s profile.
+    """  
+)
 
-# Layout inputs in three columns
-cols = st.columns(3)
-input_data = {}
+# 4) Build the input form
+with st.form("patient_form"):
+    # Demographics
+    with st.expander("👤 Demographics", expanded=True):
+        c1, c2 = st.columns(2)
+        with c1:
+            age = st.number_input("Age (years)", min_value=0, max_value=120, value=int(df['Age'].mean()))
+        with c2:
+            gender = st.selectbox("Gender", list(gender_map.keys()), help="Select patient’s gender")
+        c1, c2 = st.columns(2)
+        with c1:
+            origin = st.selectbox("Place of Residence", list(origin_map.keys()),
+                                   help="Urban or Rural origin")
+        with c2:
+            transplant = st.checkbox("Transplant Before Dialysis",
+                                     help="Check if patient had kidney transplant before PD")
 
-# 1) Gender and rural
-with cols[0]:
-    gender = st.selectbox("Gender", list(gender_map.values()))
-    input_data['Gender '] = gender
-with cols[1]:
-    rural = st.selectbox("Residence", list(rural_map.values()))
-    input_data['Rural_or_Urban_Origin'] = rural
-with cols[2]:
-    transplant = st.checkbox("Transplant Before Dialysis")
-    input_data['Transplant_before_dialysis'] = int(transplant)
+    # Socioeconomic
+    with st.expander("💼 Socioeconomic Status", expanded=False):
+        c1, c2 = st.columns(2)
+        with c1:
+            schol = st.selectbox("Scholarship Level",
+                                 df['scholarship level '].dropna().unique().tolist(),
+                                 help="Educational attainment level")
+        with c2:
+            indig = st.checkbox("Indigent CNAM Coverage",
+                                help="Check if patient is covered under indigent CNAM scheme")
 
-# 2) Binary features (checkbox)
-for i, col in enumerate([c for c in binary_cols if c not in ['Transplant_before_dialysis']]):
-    with cols[i % 3]:
-        val = st.checkbox(col.replace('_', ' ').title())
-        input_data[col] = int(val)
+    # Medical History
+    with st.expander("🩺 Medical History", expanded=False):
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(binary_cols):
+            with (c1 if i%2==0 else c2):
+                label = col.replace("_", " ").title()
+                vars()[col] = st.checkbox(label, help=f"Check if patient has {label.lower()}")
 
-# 3) Multi-category features
-for i, col in enumerate(multi_cat_cols):
-    with cols[i % 3]:
-        opts = df[col].dropna().unique().tolist()
-        sel = st.selectbox(col.strip(), opts)
-        input_data[col] = sel
+    # Dialysis Parameters
+    with st.expander("💧 Dialysis Parameters", expanded=False):
+        # numeric and multi-category
+        all_cols = ['BMI_start_PD','BMI_one_year','Urine_output_start','Initial_RRF','RRF_one_year',
+                    'Initial_UF','Initial_albumin','Initial_Hb','Nbre_peritonitis']
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(all_cols):
+            with (c1 if i%2==0 else c2):
+                val = st.number_input(col.replace("_", " ").title(),
+                                      value=float(df[col].mean()),
+                                      help=f"Enter patient’s {col}")
+        # multi-category
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(multi_cat_cols):
+            with (c1 if i%2==0 else c2):
+                sel = st.selectbox(col.strip(),
+                                   df[col].dropna().unique().tolist(),
+                                   help=f"Select patient’s {col.strip().lower()}")
 
-# 4) Numerical features
-num_cols = [c for c in df.columns if c not in binary_cols + multi_cat_cols + ['Gender ', 'Rural_or_Urban_Origin', 'Transplant_before_dialysis', target]]
-for i, col in enumerate(num_cols):
-    with cols[i % 3]:
-        input_data[col] = st.number_input(col, value=float(df[col].mean()))
+    submitted = st.form_submit_button("🔍 Predict")
 
-# Prediction
-if st.button("Predict"):
-    # Create DataFrame
-    inp = pd.DataFrame([input_data])
-    # Map back to codes
-    inp['Gender '] = inp['Gender '].map({v: k for k, v in gender_map.items()})
-    inp['Rural_or_Urban_Origin'] = inp['Rural_or_Urban_Origin'].map({v: k for k, v in rural_map.items()})
+# 5) Prediction logic
+if submitted:
+    # Gather inputs
+    inp = {
+        'Age': age,
+        'Gender ': gender,
+        'Rural_or_Urban_Origin': origin,
+        'transplant_before_dialysis': int(transplant),
+        'scholarship level ': schol,
+        'Indigent_Coverage_CNAM': int(indig)
+    }
+    # Binary
+    for col in binary_cols:
+        inp[col] = int(locals()[col])
+    # Dialysis numeric
+    for col in ['BMI_start_PD','BMI_one_year','Urine_output_start','Initial_RRF','RRF_one_year',
+                'Initial_UF','Initial_albumin','Initial_Hb','Nbre_peritonitis']:
+        inp[col] = locals()[col]
+    # Dialysis multi-cat
     for col in multi_cat_cols:
-        inp[col] = le_dict[col].transform(inp[col].astype(str))
-    # Scale and predict
-    inp_scaled = scaler.transform(inp[X.columns])
-    pred = clf.predict(inp_scaled)[0]
-    st.success(f"Predicted Technique Survival Level: {pred}")
+        inp[col] = locals()[col]
 
+    # Convert to DataFrame
+    input_df = pd.DataFrame([inp])
+
+    # Map back to encoded numeric
+    input_df['Gender '] = input_df['Gender '].map(gender_map)
+    input_df['Rural_or_Urban_Origin'] = input_df['Rural_or_Urban_Origin'].map(origin_map)
+    for col in multi_cat_cols:
+        input_df[col] = le_dict[col].transform(input_df[col].astype(str))
+
+    # Scale & predict
+    input_scaled = scaler.transform(input_df[X.columns])
+    pred = clf.predict(input_scaled)[0]
+    st.success(f"**Predicted Technique Survival Level:** {pred}")
+
+    # (Optional) show model confidence
+    probs = clf.predict_proba(input_scaled)[0]
+    st.bar_chart(pd.Series(probs, index=[f"Level {i}" for i in clf.classes_], name="Confidence"))
