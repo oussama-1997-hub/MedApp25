@@ -23,64 +23,68 @@ st.markdown("Enter patient information below to predict the **technique survival
 # =======================
 # Preprocessing
 # =======================
+# Define target and categorical columns
+target = 'technique_survival_levels'
 categorical_cols = ['Gender ', 'Rural_or_Urban_Origin', 'scholarship level ', 'Indigent_Coverage_CNAM',
                     'Smoking', 'Diabetes', 'Hypertension', 'Heart_Disease', 'Gout', 'Cancer',
                     'Pneumothorax', 'Psychiatric_disorder', 'Initial_nephropathy',
                     'Technique', 'Permeability_type', 'Diuretic', 'ACEI_ARB', 'Icodextrin', 'Autonomy']
 
+# Encode data for training
 df_encoded = df.copy()
 le_dict = {}
 
 for col in categorical_cols:
     le = LabelEncoder()
-    df_encoded[col] = le.fit_transform(df_encoded[col].astype(str))
+    df_encoded[col] = le.fit_transform(df_encoded[col])
     le_dict[col] = le
 
-# Split features and target
-X = df_encoded.drop(columns=['technique_survival_levels'])
-y = df_encoded['technique_survival_levels']
+# Separate features and target
+X = df_encoded.drop(columns=[target])
+y = df_encoded[target]
 
 # Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# Train/test split
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42, stratify=y)
-
-# Train model
+# Train Decision Tree
 clf = DecisionTreeClassifier(random_state=42)
-clf.fit(X_train, y_train)
+clf.fit(X_scaled, y)
 
-# =======================
-# Streamlit Form
-# =======================
-st.sidebar.header("Input Features")
+# ============ Streamlit App ============
 
-def user_input_features():
-    input_data = {}
-    for col in categorical_cols:
-        options = df[col].dropna().unique()
-        selected = st.sidebar.selectbox(col.strip(), sorted(options))
-        input_data[col] = selected
-    return input_data
+st.title("Technique Survival Prediction")
 
-input_dict = user_input_features()
+st.markdown("Provide patient and clinical details to predict the technique survival level.")
 
-# =======================
-if st.button("Predict"):
-    # Create input DataFrame
-    input_df = pd.DataFrame([input_dict])
-    
-    # Encode using stored LabelEncoders
-    for col in categorical_cols:
-        input_df[col] = le_dict[col].transform(input_df[col].astype(str))
-    
-    # Reorder columns to match training data
-    input_df = input_df[X.columns]  # <- This line ensures same order and names
-    
-    # Scale input
-    input_scaled = scaler.transform(input_df)
+# Collect user input
+input_data = {}
+for col in X.columns:
+    if col in categorical_cols:
+        unique_vals = df[col].dropna().unique().tolist()
+        input_val = st.selectbox(f"{col}", unique_vals)
+        input_data[col] = input_val
+    else:
+        min_val = float(df[col].min())
+        max_val = float(df[col].max())
+        mean_val = float(df[col].mean())
+        input_val = st.number_input(f"{col}", min_value=min_val, max_value=max_val, value=mean_val)
+        input_data[col] = input_val
 
-    # Predict
+# Convert input to DataFrame
+input_df = pd.DataFrame([input_data])
+
+# Encode categorical features
+for col in categorical_cols:
+    input_df[col] = le_dict[col].transform(input_df[col])
+
+# Align column order
+input_df = input_df[X.columns]
+
+# Scale
+input_scaled = scaler.transform(input_df)
+
+# Prediction
+if st.button("Predict Technique Survival Level"):
     prediction = clf.predict(input_scaled)[0]
     st.success(f"Predicted Technique Survival Level: {prediction}")
