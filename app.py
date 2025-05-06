@@ -71,19 +71,23 @@ drop_feats = ['BMI_one_year', 'RRF_one_year', 'Technique_survival']
 
 df_model = df.drop(columns=drop_feats)
 
-binary_cols = [c for c in df_model.columns 
-               if set(df_model[c].dropna().unique()) <= {0,1} and c != target]
+# Identify binary columns (0/1) excluding target
+generic_values = lambda col: set(df_model[col].dropna().unique())
+binary_cols = [c for c in df_model.columns if generic_values(c) <= {0,1} and c != target]
 
-multi_cat_cols = ['scholarship level ', 'Initial_nephropathy',
-                  'Technique', 'Permeability_type', 'Germ']
+# Multi-category columns
+multi_cat_cols = ['scholarship level ', 'Initial_nephropathy', 'Technique', 'Permeability_type', 'Germ']
 
+# Special two‑value categorial mappings
 gender_col = 'Gender '
 origin_col = 'Rural_or_Urban_Origin'
 gender_map = {"Male":1, "Female":2}
 origin_map = {"Urban":2, "Rural":1}
 
+# Encode df_model for training
 df_enc = df_model.copy()
 le_dict = {}
+# Label-encode multi-category columns
 for col in multi_cat_cols:
     le = LabelEncoder()
     df_enc[col] = le.fit_transform(df_enc[col].astype(str))
@@ -91,6 +95,7 @@ for col in multi_cat_cols:
 
 X = df_enc.drop(columns=[target])
 y = df_enc[target]
+
 scaler = StandardScaler().fit(X)
 X_scaled = scaler.transform(X)
 clf = DecisionTreeClassifier(random_state=42).fit(X_scaled, y)
@@ -98,11 +103,12 @@ clf = DecisionTreeClassifier(random_state=42).fit(X_scaled, y)
 # ─── 5) INPUT FORM ───────────────────────────────────────────────────────────────
 st.markdown("### 📝 Patient Data Input")
 with st.form("patient_form"):
+    # Demographics
     with st.expander("👤 Demographics", expanded=True):
         c1, c2 = st.columns(2)
         with c1:
             age = st.number_input("Age (years)", min_value=0, max_value=120,
-                                  value=int(sorted(df['Age'].mean()))
+                                  value=int(df['Age'].mean()))
         with c2:
             gender = st.selectbox("Gender", list(gender_map.keys()))
         c1, c2 = st.columns(2)
@@ -111,59 +117,81 @@ with st.form("patient_form"):
         with c2:
             transpl = st.checkbox("Transplant before Dialysis")
 
+    # Socioeconomic Status
     with st.expander("💼 Socioeconomic Status", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
-            schol = st.selectbox("Scholarship Level",
-                                 df['scholarship level '].dropna().unique().tolist()) with st.expander("🩺 Medical History", expanded=False):
+            schol = st.selectbox(
+                "Scholarship Level",
+                sorted(df['scholarship level '].dropna().unique().tolist())
+            )
+        with c2:
+            indig = st.checkbox("Indigent CNAM Coverage")
+
+    # Medical History
+    with st.expander("🩺 Medical History", expanded=False):
         c1, c2 = st.columns(2)
         for i, col in enumerate(binary_cols):
-            with (c1 if i%2==0 else c2):
+            with (c1 if i % 2 == 0 else c2):
                 val = st.checkbox(col.replace("_"," ").title())
                 locals()[col] = int(val)
 
+    # Dialysis Parameters
     with st.expander("💧 Dialysis Parameters", expanded=False):
+        # Numeric fields
         dialysis_nums = [
             'BMI_start_PD', 'Urine_output_start', 'Initial_RRF',
             'Initial_UF', 'Initial_albumin', 'Initial_Hb', 'Nbre_peritonitis'
         ]
         d1, d2 = st.columns(2)
         for i, col in enumerate(dialysis_nums):
-            with (d1 if i%2==0 else d2):
+            with (d1 if i % 2 == 0 else d2):
                 locals()[col] = st.number_input(
                     col.replace("_"," ").title(),
                     value=float(df[col].mean())
                 )
-        d1, d2 = st.columns(2)
-        for i, csorted(df[col].mean())
-                )
+        # Multi-category fields
         d1, d2 = st.columns(2)
         for i, col in enumerate(['Permeability_type', 'Germ']):
-            with (d1 if i%2==0 else d2):
+            with (d1 if i % 2 == 0 else d2):
                 locals()[col] = st.selectbox(
                     col.replace("_"," ").title(),
-                    df[col].dropna().unique().tolist())tted:
+                    sorted(df[col].dropna().unique().tolist())
+                )
+
+    submitted = st.form_submit_button("🔍 Predict")
+
+# ─── 6) PREDICTION & INTERPRETATION ──────────────────────────────────────────────
+if submitted:
     inp = {}
+    # Demographics
     inp['Age'] = age
     inp[gender_col] = gender_map[gender]
     inp[origin_col] = origin_map[origin]
     inp['transplant_before_dialysis'] = int(transpl)
+    # Socioeconomic
     inp['scholarship level '] = schol
     inp['Indigent_Coverage_CNAM'] = int(indig)
+    # Medical History
     for col in binary_cols:
         inp[col] = locals()[col]
+    # Dialysis numeric
     for col in dialysis_nums:
         inp[col] = locals()[col]
+    # Dialysis multi-cat
     for col in ['Permeability_type', 'Germ']:
         inp[col] = locals()[col]
 
+    # Build and encode DF
     input_df = pd.DataFrame([inp])
     for col in multi_cat_cols:
         input_df[col] = le_dict[col].transform(input_df[col].astype(str))
 
+    # Scale & predict
     input_scaled = scaler.transform(input_df[X.columns])
     pred = clf.predict(input_scaled)[0]
 
+    # Display result
     if pred == 2:
         st.success("✅ **Will succeed ≥ 2 years** (Level 2)")
         st.info("This PD technique is expected to succeed for at least two years.")
