@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # Streamlit app title
 st.title("Prediction of Target Using Decision Tree 2222")
