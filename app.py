@@ -67,7 +67,7 @@ with st.expander("📊 View a Sample of the Dataset", expanded=False):
     st.markdown('<div class="df-container">', unsafe_allow_html=True)
     st.dataframe(df.head(), use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
-  -----------------------------------------------------------------------------------
+# ─── ML model ────────────────────────────────────────────────────────────────────
 
 target = 'technique_survival_levels'
 
