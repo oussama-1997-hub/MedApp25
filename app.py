@@ -141,26 +141,18 @@ with st.form("patient_form"):
                 locals()[col] = int(val)
 
     # Dialysis Parameters
-       with st.expander("💧 Dialysis Parameters", expanded=False):
-        dialysis_nums = [
-            'BMI_start_PD', 'Urine_output_start', 'Initial_RRF',
-            'Initial_UF', 'Initial_albumin', 'Initial_Hb', 'Nbre_peritonitis'
-        ]
-        d1, d2 = st.columns(2)
-        for i, col in enumerate(dialysis_nums):
-            with (d1 if i%2==0 else d2):
+    with st.expander("💧 Dialysis Parameters", expanded=False):
+        # Numeric fields (from df_model minus target & categorical)
+        numeric_list = [c for c in df_model.columns
+                        if c not in binary_cols + multi_cat_cols
+                        + [gender_col, origin_col, 'transplant_before_dialysis', target]]
+        c1, c2 = st.columns(2)
+        for i, col in enumerate(numeric_list):
+            with (c1 if i%2==0 else c2):
                 locals()[col] = st.number_input(
                     col.replace("_"," ").title(),
                     value=float(df[col].mean())
                 )
-        d1, d2 = st.columns(2)
-        for i, col in enumerate(['Permeability_type', 'Germ']):
-            with (d1 if i%2==0 else d2):
-                locals()[col] = st.selectbox(
-                    col.replace("_"," ").title(),
-                    df[col].dropna().unique().tolist()
-                )
-
         # Multi-category
         c1, c2 = st.columns(2)
         for i, col in enumerate(multi_cat_cols):
