@@ -152,7 +152,8 @@ for i, col in enumerate(multi_cat_cols):
             index=options.index(default_val) if default_val in options else 0
         )
 
-    submitted = st.form_submit_button("🔍 Predict")
+
+submitted = st.form_submit_button("🔍 Predict")
 
 # ─── 6) PREDICTION & INTERPRETATION ──────────────────────────────────────────────
 if submitted:
