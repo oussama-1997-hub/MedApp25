@@ -203,54 +203,36 @@ with st.form("patient_form"):
             val = cols[i % 2].checkbox(col.replace("_", " ").title())
             key_inputs[col] = int(val)
 
-    # 💧 Dialysis Parameters
-with st.expander("💧 Dialysis Parameters", expanded=False):
-    # Build list of all numeric features not already captured
-    num_cols = [
-        c for c in df.columns
-        if c not in binary_cols + multi_cat_cols
-           + ['Gender ', 'Rural_or_Urban_Origin', 'transplant_before_dialysis', target]
-           + drop_feats
-           and c not in key_inputs
-    ]
-    # Render numeric inputs two per row
-    for i in range(0, len(num_cols), 2):
-        col1, col2 = st.columns(2)
-        name1 = num_cols[i]
-        key_inputs[name1] = col1.number_input(
-            name1.replace("_", " ").title(),
-            value=float(df[name1].mean())
-        )
-        # if there is a second field in this row, render it
-        if i + 1 < len(num_cols):
-            name2 = num_cols[i + 1]
-            key_inputs[name2] = col2.number_input(
-                name2.replace("_", " ").title(),
-                value=float(df[name2].mean())
+        # 💧 Dialysis Parameters
+    with st.expander("💧 Dialysis Parameters", expanded=False):
+        # Numeric inputs
+        num_cols = [
+            c for c in df.columns
+            if c not in binary_cols + multi_cat_cols
+            + ['Gender ', 'Rural_or_Urban_Origin', 'transplant_before_dialysis', target]
+            + drop_feats
+            and c not in existing
+        ]
+        cols = st.columns(2)
+        for i, col in enumerate(num_cols):
+            key_inputs[col] = cols[i % 2].number_input(
+                col.replace("_", " ").title(),
+                value=float(df[col].mean())
             )
 
-    # Now do the same for any remaining categorical features
-    cat_cols = [c for c in multi_cat_cols if c not in key_inputs]
-    for i in range(0, len(cat_cols), 2):
-        col1, col2 = st.columns(2)
-        name1 = cat_cols[i]
-        options1 = sorted(df[name1].dropna().unique())
-        key_inputs[name1] = col1.selectbox(
-            name1.strip().replace("_", " ").title(),
-            options1,
-            index=0
-        )
-        if i + 1 < len(cat_cols):
-            name2 = cat_cols[i + 1]
-            options2 = sorted(df[name2].dropna().unique())
-            key_inputs[name2] = col2.selectbox(
-                name2.strip().replace("_", " ").title(),
-                options2,
+        # Categorical inputs
+        cols = st.columns(2)
+        for i, col in enumerate(multi_cat_cols):
+            if col in existing:
+                continue
+            options = sorted(df[col].dropna().unique().tolist())
+            key_inputs[col] = cols[i % 2].selectbox(
+                col.strip().replace("_", " ").title(),
+                options,
                 index=0
             )
 
     submitted = st.form_submit_button("🔍 Predict")
-
 # ─── PREDICTION ─────────────────────────────────────────────────────────────────
 if submitted:
     # Start from the key_inputs dict (which already has 'scholarship level ')
