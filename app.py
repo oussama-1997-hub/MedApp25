@@ -6,9 +6,36 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
+# ─── STYLING ────────────────────────────────────────────────────────────────────
 st.markdown(
     """
     <style>
+    .big-title {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #2E86C1;
+        text-align: center;
+        margin-bottom: 0.25rem;
+    }
+    .subtitle {
+        font-size: 1.2rem;
+        color: #566573;
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+    }
+    .df-container {
+        background-color: #F2F4F4;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    .highlight {
+        background-color: #EBF5FB;
+        padding: 1rem;
+        border: 2px solid #3498DB;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
     /* Global body text */
     html, body, [data-testid="stMarkdownContainer"] p, 
     [data-baseweb="markdown"] {
@@ -42,9 +69,8 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 # ─── HEADER ─────────────────────────────────────────────────────────────────────
-st.markdown('<div class="big-title">Technique Survival Level Predictor 222</div>', unsafe_allow_html=True)
+st.markdown('<div class="big-title">Technique Survival Level Predictor</div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="subtitle">'
     'Enter your patient’s details below. '
