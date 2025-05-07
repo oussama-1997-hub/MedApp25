@@ -252,25 +252,6 @@ if submitted:
 
     input_scaled = scaler.transform(input_df[X.columns])
     pred = clf.predict(input_scaled)[0]
-    # ... display results ...
-# ─── PREDICTION ─────────────────────────────────────────────────────────────────
-if submitted:
-    inp = dict(key_inputs)  # Start with top features and filled optional ones
-    inp['Gender '] = gender_map[gender]
-    inp['Rural_or_Urban_Origin'] = origin_map[origin]
-    inp['transplant_before_dialysis'] = int(transpl)
-    inp['scholarship level '] = schol
-    inp['Indigent_Coverage_CNAM'] = int(indig)
-
-    input_df = pd.DataFrame([inp])
-
-    for col in multi_cat_cols:
-        if col in input_df.columns:
-            input_df[col] = le_dict[col].transform(input_df[col].astype(str))
-
-    input_scaled = scaler.transform(input_df[X.columns])
-    pred = clf.predict(input_scaled)[0]
-
     if pred == 2:
         st.success("✅ Predicted Technique Survival Level: 2 (will succeed ≥ 2 years)")
         st.info("This PD technique is expected to succeed for at least **2 years**, indicating a good prognosis.")
