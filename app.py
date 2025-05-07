@@ -97,31 +97,73 @@ top_features = ['Age', 'BMI_start_PD', 'Initial_RRF ', 'Initial_albumin', 'Nbre_
 # ─── INPUT FORM ─────────────────────────────────────────────────────────────────
 st.markdown("### 🌟 Key Features (Required)")
 with st.form("patient_form"):
-    st.markdown('<div class="highlight">Please fill in the **most important** features below for accurate predictions.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="highlight">'
+        'Please fill in the **most important** features below for accurate predictions.'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
     key_inputs = {}
-    c1, c2 = st.columns(2)
-    c1, c2 = st.columns(2)
-    key_inputs['Age'] = c1.number_input("Age (years)", min_value=0, max_value=120, value=int(df['Age'].mean()))
-    key_inputs['Initial_RRF '] = c2.number_input("Initial RRF", value=float(df['Initial_RRF '].mean()))
 
+    # Row 1: Age, BMI_start_PD
     c1, c2 = st.columns(2)
-    key_inputs['BMI_start_PD'] = c1.number_input("BMI at Start of PD", value=float(df['BMI_start_PD'].mean()))
-    key_inputs['Initial_albumin'] = c2.number_input("Initial Albumin", value=float(df['Initial_albumin'].mean()))
+    key_inputs['Age'] = c1.number_input(
+        "Age (years)",
+        min_value=0,
+        max_value=120,
+        value=int(df['Age'].mean())
+    )
+    key_inputs['BMI_start_PD'] = c2.number_input(
+        "BMI at Start of PD",
+        value=float(df['BMI_start_PD'].mean())
+    )
 
+    # Row 2: Initial_RRF, Initial_albumin
     c1, c2 = st.columns(2)
-    key_inputs['Nbre_peritonitis'] = c1.number_input("Number of Peritonitis Episodes", min_value=0, value=int(df['Nbre_peritonitis'].mean()))
-    key_inputs['Germ'] = c2.selectbox("Type of Germ", df['Germ'].unique())
+    key_inputs['Initial_RRF '] = c1.number_input(
+        "Initial RRF",
+        value=float(df['Initial_RRF '].mean())
+    )
+    key_inputs['Initial_albumin'] = c2.number_input(
+        "Initial Albumin",
+        value=float(df['Initial_albumin'].mean())
+    )
 
+    # Row 3: Nbre_peritonitis, Initial_Charlson_score
     c1, c2 = st.columns(2)
-    key_inputs['scholarship level '] = c1.selectbox("Scholarship Level", df['scholarship level '].unique())
-    key_inputs['Hypertension'] = c2.selectbox("Hypertension", ['Yes', 'No'])
+    key_inputs['Nbre_peritonitis'] = c1.number_input(
+        "Number of Peritonitis Episodes",
+        min_value=0,
+        step=1,
+        value=int(df['Nbre_peritonitis'].mean())
+    )
+    key_inputs['Initial_Charlson_score'] = c2.number_input(
+        "Initial Charlson Score",
+        min_value=0,
+        step=1,
+        value=int(df['Initial_Charlson_score'].mean())
+    )
 
+    # Row 4: Germ, scholarship level
     c1, c2 = st.columns(2)
-    key_inputs['Initial_Charlson_score'] = c1.number_input("Initial Charlson Score", min_value=0, value=int(df['Initial_Charlson_score'].mean()))
-    key_inputs['Autonomy'] = c2.selectbox("Autonomy", df['Autonomy'].unique())
+    key_inputs['Germ'] = c1.selectbox(
+        "Germ",
+        options=sorted(df['Germ'].dropna().unique().tolist())
+    )
+    key_inputs['scholarship level '] = c2.selectbox(
+        "Scholarship Level",
+        options=sorted(df['scholarship level '].dropna().unique().tolist())
+    )
 
-    submitted = st.form_submit_button("Submit")
+    # Row 5: Hypertension, Autonomy
+    c1, c2 = st.columns(2)
+    key_inputs['Hypertension'] = int(
+        c1.checkbox("Hypertension")
+    )
+    key_inputs['Autonomy'] = int(
+        c2.checkbox("Autonomy")
+    )
     
     # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
     st.markdown("### 🧩 Optional Inputs (for more precision)")
