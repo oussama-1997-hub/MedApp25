@@ -36,6 +36,16 @@ st.markdown(
         border-radius: 0.5rem;
         margin-bottom: 1rem;
     }
+    /* Increase label (category) text size */
+    label, .stSelectbox label, .stNumberInput label {
+        font-size: 1.2rem !important;
+        font-weight: 500;
+    }
+
+    /* Increase input text size */
+    .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
+        font-size: 1.1rem !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
