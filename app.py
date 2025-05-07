@@ -37,7 +37,37 @@ st.markdown(
         margin-bottom: 1rem;
     }
 
+    <style>
+    /* Global body text */
+    html, body, [data-testid="stMarkdownContainer"] p, 
+    [data-baseweb="markdown"] {
+        font-size: 18px !important;
+        line-height: 1.6 !important;
+    }
 
+    /* Increase input, select and checkbox labels */
+    label, .stNumberInput label, .stSelectbox label, .stCheckbox label {
+        font-size: 16px !important;
+    }
+
+    /* Title & subtitle (you can tweak these separately) */
+    .big-title {
+        font-size: 4rem !important;
+    }
+    .subtitle {
+        font-size: 1.5rem !important;
+    }
+
+    /* Dataframe container text */
+    .df-container, .df-container * {
+        font-size: 16px !important;
+    }
+
+    /* Highlight box */
+    .highlight {
+        font-size: 16px !important;
+    }
+    </style>
     /* Increase input, select and checkbox labels */
     label, .stNumberInput label, .stSelectbox label, .stCheckbox label {
         font-size: 16px !important;
