@@ -38,13 +38,13 @@ st.markdown(
     }
     /* Increase label (category) text size */
     label, .stSelectbox label, .stNumberInput label {
-        font-size: 1.2rem !important;
+        font-size: 1.8rem !important;
         font-weight: 500;
     }
 
     /* Increase input text size */
     .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
-        font-size: 1.1rem !important;
+        font-size: 1.5rem !important;
     }
     </style>
     """,
