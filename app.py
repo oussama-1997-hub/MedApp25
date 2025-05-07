@@ -92,12 +92,7 @@ X_scaled = scaler.transform(X)
 clf = DecisionTreeClassifier(random_state=42).fit(X_scaled, y)
 
 # ─── TOP FEATURES ───────────────────────────────────────────────────────────────
-top_features = [
-    'Technique_survival', 'Initial_RRF ', 'BMI_start_PD', 'Age',
-    'Urine_output_start', 'BMI_one_year', 'Initial_UF ',
-    'Initial_albumin', 'Initial_Hb ', 'RRF_one_year'
-]
-
+top_features = ['Age', 'BMI_start_PD', 'Initial_RRF ', 'Initial_albumin', 'Nbre_peritonitis', 'Germ', 'scholarship level ', 'Hypertension', 'Initial_Charlson_score', 'Autonomy']
 # ─── INPUT FORM ─────────────────────────────────────────────────────────────────
 st.markdown("### 🌟 Key Features (Required)")
 with st.form("patient_form"):
