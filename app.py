@@ -93,6 +93,7 @@ clf = DecisionTreeClassifier(random_state=42).fit(X_scaled, y)
 
 # ─── TOP FEATURES ───────────────────────────────────────────────────────────────
 top_features = ['Age', 'BMI_start_PD', 'Initial_RRF ', 'Initial_albumin', 'Nbre_peritonitis', 'Germ', 'scholarship level ', 'Hypertension', 'Initial_Charlson_score', 'Autonomy']
+
 # ─── INPUT FORM ─────────────────────────────────────────────────────────────────
 st.markdown("### 🌟 Key Features (Required)")
 with st.form("patient_form"):
@@ -101,23 +102,23 @@ with st.form("patient_form"):
     key_inputs = {}
     c1, c2 = st.columns(2)
     key_inputs['Age'] = c1.number_input("Age (years)", min_value=0, max_value=120, value=int(df['Age'].mean()))
-    key_inputs['Technique_survival'] = c2.number_input("Technique Survival (months)", value=float(df['Technique_survival'].mean()))
-
-    c1, c2 = st.columns(2)
-    key_inputs['Initial_RRF '] = c1.number_input("Initial RRF", value=float(df['Initial_RRF '].mean()))
-    key_inputs['RRF_one_year'] = c2.number_input("RRF After One Year", value=float(df['RRF_one_year'].mean()))
+    key_inputs['Initial_RRF '] = c2.number_input("Initial RRF", value=float(df['Initial_RRF '].mean()))
 
     c1, c2 = st.columns(2)
     key_inputs['BMI_start_PD'] = c1.number_input("BMI at Start of PD", value=float(df['BMI_start_PD'].mean()))
-    key_inputs['BMI_one_year'] = c2.number_input("BMI After One Year", value=float(df['BMI_one_year'].mean()))
+    key_inputs['Initial_albumin'] = c2.number_input("Initial Albumin", value=float(df['Initial_albumin'].mean()))
 
     c1, c2 = st.columns(2)
-    key_inputs['Urine_output_start'] = c1.number_input("Urine Output at Start", value=float(df['Urine_output_start'].mean()))
-    key_inputs['Initial_UF '] = c2.number_input("Initial UF", value=float(df['Initial_UF '].mean()))
+    key_inputs['Nbre_peritonitis'] = c1.number_input("Number of Peritonitis Episodes", min_value=0, value=int(df['Nbre_peritonitis'].mean()))
+    key_inputs['Germ'] = c2.selectbox("Type of Germ", df['Germ'].unique())
 
     c1, c2 = st.columns(2)
-    key_inputs['Initial_albumin'] = c1.number_input("Initial Albumin", value=float(df['Initial_albumin'].mean()))
-    key_inputs['Initial_Hb '] = c2.number_input("Initial Hb", value=float(df['Initial_Hb '].mean()))
+    key_inputs['scholarship level '] = c1.selectbox("Scholarship Level", df['scholarship level '].unique())
+    key_inputs['Hypertension'] = c2.selectbox("Hypertension", ['Yes', 'No'])
+
+    c1, c2 = st.columns(2)
+    key_inputs['Initial_Charlson_score'] = c1.number_input("Initial Charlson Score", min_value=0, value=int(df['Initial_Charlson_score'].mean()))
+    key_inputs['Autonomy'] = c2.selectbox("Autonomy", df['Autonomy'].unique())
     
     # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
     st.markdown("### 🧩 Optional Inputs (for more precision)")
