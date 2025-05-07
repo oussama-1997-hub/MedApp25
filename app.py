@@ -6,35 +6,37 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-# ─── STYLING ────────────────────────────────────────────────────────────────────
 st.markdown(
     """
     <style>
+    /* Global body text */
+    html, body, [data-testid="stMarkdownContainer"] p, 
+    [data-baseweb="markdown"] {
+        font-size: 18px !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Increase input, select and checkbox labels */
+    label, .stNumberInput label, .stSelectbox label, .stCheckbox label {
+        font-size: 16px !important;
+    }
+
+    /* Title & subtitle (you can tweak these separately) */
     .big-title {
-        font-size: 3rem;
-        font-weight: 700;
-        color: #2E86C1;
-        text-align: center;
-        margin-bottom: 0.25rem;
+        font-size: 4rem !important;
     }
     .subtitle {
-        font-size: 1.2rem;
-        color: #566573;
-        text-align: center;
-        margin-top: 0;
-        margin-bottom: 1.5rem;
+        font-size: 1.5rem !important;
     }
-    .df-container {
-        background-color: #F2F4F4;
-        padding: 1rem;
-        border-radius: 0.5rem;
+
+    /* Dataframe container text */
+    .df-container, .df-container * {
+        font-size: 16px !important;
     }
+
+    /* Highlight box */
     .highlight {
-        background-color: #EBF5FB;
-        padding: 1rem;
-        border: 2px solid #3498DB;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
+        font-size: 16px !important;
     }
     </style>
     """,
