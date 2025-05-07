@@ -97,9 +97,11 @@ top_features = ['Age', 'BMI_start_PD', 'Initial_RRF ', 'Initial_albumin', 'Nbre_
 # ─── INPUT FORM ─────────────────────────────────────────────────────────────────
 st.markdown("### 🌟 Key Features (Required)")
 with st.form("patient_form"):
+
+    # — Highlight top features —
     st.markdown(
         '<div class="highlight">'
-        'Please fill in the **most important** features below for accurate predictions.'
+        'Please fill in the <strong>most important</strong> features below for accurate predictions.'
         '</div>',
         unsafe_allow_html=True
     )
@@ -158,11 +160,12 @@ with st.form("patient_form"):
 
     # Row 5: Hypertension, Autonomy
     c1, c2 = st.columns(2)
+    # **Give each checkbox a unique key to avoid duplicate IDs**
     key_inputs['Hypertension'] = int(
-        c1.checkbox("Hypertension")
+        c1.checkbox("Hypertension", key="chk_hypertension")
     )
     key_inputs['Autonomy'] = int(
-        c2.checkbox("Autonomy")
+        c2.checkbox("Autonomy", key="chk_autonomy")
     )
     
     # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
