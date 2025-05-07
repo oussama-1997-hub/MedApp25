@@ -199,17 +199,30 @@ with st.form("patient_form"):
             key_inputs[col] = int(val)
 
     with st.expander("💧 Dialysis Parameters", expanded=False):
-        numeric_list = [c for c in df.columns if c not in binary_cols + multi_cat_cols 
-                        + ['Gender ', 'Rural_or_Urban_Origin', 'transplant_before_dialysis', target]
-                        + drop_feats]
-        for col in numeric_list:
-            if col not in top_features:
-                key_inputs[col] = st.number_input(col.replace("_"," ").title(), value=float(df[col].mean()))
-        for col in multi_cat_cols:
+            # Numeric inputs in two‑column layout
+        num_cols = [c for c in df.columns
+                    if c not in binary_cols + multi_cat_cols
+                    + ['Gender ', 'Rural_or_Urban_Origin', 'transplant_before_dialysis', target]
+                    + drop_feats]
+        num_cols = [c for c in num_cols if c not in top_features]
+        cols = st.columns(2)
+        for i, col in enumerate(num_cols):
+            value = float(df[col].mean())
+            key_inputs[col] = cols[i % 2].number_input(
+                col.replace("_", " ").title(),
+                value=value
+            )
+    
+        # Categorical inputs in two‑column layout
+        cols = st.columns(2)
+        for i, col in enumerate(multi_cat_cols):
             options = sorted(df[col].dropna().unique().tolist())
-            default_val = options[0] if options else None
-            key_inputs[col] = st.selectbox(col.strip().replace("_", " ").title(), options, 
-                                           index=options.index(default_val) if default_val in options else 0)
+            default_idx = options.index(options[0]) if options else 0
+            key_inputs[col] = cols[i % 2].selectbox(
+                col.strip().replace("_", " ").title(),
+                options,
+                index=default_idx
+            )
 
     submitted = st.form_submit_button("🔍 Predict")
 
