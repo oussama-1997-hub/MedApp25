@@ -101,6 +101,7 @@ with st.form("patient_form"):
 
     key_inputs = {}
     c1, c2 = st.columns(2)
+    c1, c2 = st.columns(2)
     key_inputs['Age'] = c1.number_input("Age (years)", min_value=0, max_value=120, value=int(df['Age'].mean()))
     key_inputs['Initial_RRF '] = c2.number_input("Initial RRF", value=float(df['Initial_RRF '].mean()))
 
@@ -119,6 +120,8 @@ with st.form("patient_form"):
     c1, c2 = st.columns(2)
     key_inputs['Initial_Charlson_score'] = c1.number_input("Initial Charlson Score", min_value=0, value=int(df['Initial_Charlson_score'].mean()))
     key_inputs['Autonomy'] = c2.selectbox("Autonomy", df['Autonomy'].unique())
+
+    submitted = st.form_submit_button("Submit")
     
     # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
     st.markdown("### 🧩 Optional Inputs (for more precision)")
