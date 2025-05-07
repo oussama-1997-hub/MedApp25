@@ -36,12 +36,7 @@ st.markdown(
         border-radius: 0.5rem;
         margin-bottom: 1rem;
     }
-    /* Global body text */
-    html, body, [data-testid="stMarkdownContainer"] p, 
-    [data-baseweb="markdown"] {
-        font-size: 18px !important;
-        line-height: 1.6 !important;
-    }
+
 
     /* Increase input, select and checkbox labels */
     label, .stNumberInput label, .stSelectbox label, .stCheckbox label {
@@ -70,7 +65,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 # ─── HEADER ─────────────────────────────────────────────────────────────────────
-st.markdown('<div class="big-title">Technique Survival Level Predictor</div>', unsafe_allow_html=True)
+st.markdown('<div class="big-title">Technique Survival Level Predictor </div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="subtitle">'
     'Enter your patient’s details below. '
