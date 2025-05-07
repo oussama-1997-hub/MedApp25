@@ -178,39 +178,53 @@ with st.form("patient_form"):
     )[1]
     
     # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
-    st.markdown("### 🧩 Optional Inputs (for more precision)")
+st.markdown("### 🧩 Optional Inputs (for more precision)")
 
-    with st.expander("👤 Demographics", expanded=False):
-        c1, c2 = st.columns(2)
-        gender = c1.selectbox("Gender", list(gender_map.keys()))
-        origin = c2.selectbox("Residence", list(origin_map.keys()))
-        transpl = c1.checkbox("Transplant before Dialysis")
+with st.expander("👤 Demographics", expanded=False):
+    c1, c2 = st.columns(2)
+    gender = c1.selectbox("Gender", list(gender_map.keys()))
+    origin = c2.selectbox("Residence", list(origin_map.keys()))
+    transpl = c1.checkbox("Transplant before Dialysis")
 
-    with st.expander("💼 Socioeconomic Status", expanded=False):
-        c1, c2 = st.columns(2)
-        schol = c1.selectbox("Scholarship Level", df['scholarship level '].dropna().unique().tolist())
-        indig = c2.checkbox("Indigent CNAM Coverage")
+with st.expander("💼 Socioeconomic Status", expanded=False):
+    c1, c2 = st.columns(2)
+    schol = c1.selectbox("Scholarship Level", df['scholarship level '].dropna().unique().tolist())
+    indig = c2.checkbox("Indigent CNAM Coverage")
 
-    with st.expander("🩺 Medical History", expanded=False):
-        for i, col in enumerate(binary_cols):
-            col_title = col.replace("_"," ").title()
-            val = st.checkbox(col_title)
-            key_inputs[col] = int(val)
+with st.expander("🩺 Medical History", expanded=False):
+    cols = st.columns(2)
+    for i, col in enumerate(binary_cols):
+        col_title = col.replace("_", " ").title()
+        val = cols[i % 2].checkbox(col_title)
+        key_inputs[col] = int(val)
 
-    with st.expander("💧 Dialysis Parameters", expanded=False):
-        numeric_list = [c for c in df.columns if c not in binary_cols + multi_cat_cols 
-                        + ['Gender ', 'Rural_or_Urban_Origin', 'transplant_before_dialysis', target]
-                        + drop_feats]
-        for col in numeric_list:
-            if col not in top_features:
-                key_inputs[col] = st.number_input(col.replace("_"," ").title(), value=float(df[col].mean()))
-        for col in multi_cat_cols:
-            options = sorted(df[col].dropna().unique().tolist())
-            default_val = options[0] if options else None
-            key_inputs[col] = st.selectbox(col.strip().replace("_", " ").title(), options, 
-                                           index=options.index(default_val) if default_val in options else 0)
+with st.expander("💧 Dialysis Parameters", expanded=False):
+    # Numeric inputs in two‑column layout
+    num_cols = [c for c in df.columns
+                if c not in binary_cols + multi_cat_cols
+                + ['Gender ', 'Rural_or_Urban_Origin', 'transplant_before_dialysis', target]
+                + drop_feats]
+    num_cols = [c for c in num_cols if c not in top_features]
+    cols = st.columns(2)
+    for i, col in enumerate(num_cols):
+        value = float(df[col].mean())
+        key_inputs[col] = cols[i % 2].number_input(
+            col.replace("_", " ").title(),
+            value=value
+        )
 
-    submitted = st.form_submit_button("🔍 Predict")
+    # Categorical inputs in two‑column layout
+    cols = st.columns(2)
+    for i, col in enumerate(multi_cat_cols):
+        options = sorted(df[col].dropna().unique().tolist())
+        default_idx = options.index(options[0]) if options else 0
+        key_inputs[col] = cols[i % 2].selectbox(
+            col.strip().replace("_", " ").title(),
+            options,
+            index=default_idx
+        )
+
+submitted = st.form_submit_button("🔍 Predict")
 
 # ─── PREDICTION ─────────────────────────────────────────────────────────────────
 if submitted:
