@@ -158,15 +158,7 @@ with st.form("patient_form"):
         options=sorted(df['scholarship level '].dropna().unique().tolist())
     )
 
-    # Row 5: Hypertension, Autonomy
-    c1, c2 = st.columns(2)
-    # **Give each checkbox a unique key to avoid duplicate IDs**
-    key_inputs['Hypertension'] = int(
-        c1.checkbox("Hypertension", key="chk_hypertension")
-    )
-    key_inputs['Autonomy'] = int(
-        c2.checkbox("Autonomy", key="chk_autonomy")
-    )
+
     
     # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
     st.markdown("### 🧩 Optional Inputs (for more precision)")
