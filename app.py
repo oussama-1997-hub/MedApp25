@@ -92,28 +92,29 @@ X_scaled = scaler.transform(X)
 clf = DecisionTreeClassifier(random_state=42).fit(X_scaled, y)
 
 # ─── TOP FEATURES ───────────────────────────────────────────────────────────────
-top_features = ['Age', 'BMI_start_PD', 'Initial_RRF ', 'Initial_albumin', 'Nbre_peritonitis', 'Germ', 'scholarship level ', 'Hypertension', 'Initial_Charlson_score', 'Autonomy']
+top_features = [
+    'Age', 'BMI_start_PD', 'Initial_RRF ', 'Initial_albumin',
+    'Nbre_peritonitis', 'Germ', 'scholarship level ',
+    'Hypertension', 'Initial_Charlson_score', 'Autonomy'
+]
 
 # ─── INPUT FORM ─────────────────────────────────────────────────────────────────
 st.markdown("### 🌟 Key Features (Required)")
 with st.form("patient_form"):
-
-    # — Highlight top features —
     st.markdown(
         '<div class="highlight">'
-        'Please fill in the <strong>most important</strong> features below for accurate predictions.'
+        'Please fill in the **most important** features below for accurate predictions.'
         '</div>',
         unsafe_allow_html=True
     )
 
     key_inputs = {}
 
-    # Row 1: Age, BMI_start_PD
+    # Row 1
     c1, c2 = st.columns(2)
     key_inputs['Age'] = c1.number_input(
         "Age (years)",
-        min_value=0,
-        max_value=120,
+        min_value=0, max_value=120,
         value=int(df['Age'].mean())
     )
     key_inputs['BMI_start_PD'] = c2.number_input(
@@ -121,7 +122,7 @@ with st.form("patient_form"):
         value=float(df['BMI_start_PD'].mean())
     )
 
-    # Row 2: Initial_RRF, Initial_albumin
+    # Row 2
     c1, c2 = st.columns(2)
     key_inputs['Initial_RRF '] = c1.number_input(
         "Initial RRF",
@@ -132,32 +133,42 @@ with st.form("patient_form"):
         value=float(df['Initial_albumin'].mean())
     )
 
-    # Row 3: Nbre_peritonitis, Initial_Charlson_score
+    # Row 3
     c1, c2 = st.columns(2)
     key_inputs['Nbre_peritonitis'] = c1.number_input(
         "Number of Peritonitis Episodes",
         min_value=0,
-        step=1,
         value=int(df['Nbre_peritonitis'].mean())
     )
-    key_inputs['Initial_Charlson_score'] = c2.number_input(
+    key_inputs['Germ'] = c2.number_input(
+        "Germ (encoded)",
+        value=float(df['Germ'].mean())
+    )
+
+    # Row 4
+    c1, c2 = st.columns(2)
+    key_inputs['scholarship level '] = c1.number_input(
+        "Scholarship Level (encoded)",
+        value=float(df['scholarship level '].mean())
+    )
+    key_inputs['Hypertension'] = c2.number_input(
+        "Hypertension (0=no, 1=yes)",
+        min_value=0, max_value=1,
+        value=int(df['Hypertension'].mean())
+    )
+
+    # Row 5
+    c1, c2 = st.columns(2)
+    key_inputs['Initial_Charlson_score'] = c1.number_input(
         "Initial Charlson Score",
         min_value=0,
-        step=1,
         value=int(df['Initial_Charlson_score'].mean())
     )
-
-    # Row 4: Germ, scholarship level
-    c1, c2 = st.columns(2)
-    key_inputs['Germ'] = c1.selectbox(
-        "Germ",
-        options=sorted(df['Germ'].dropna().unique().tolist())
+    key_inputs['Autonomy'] = c2.number_input(
+        "Autonomy (0=no, 1=yes)",
+        min_value=0, max_value=1,
+        value=int(df['Autonomy'].mean())
     )
-    key_inputs['scholarship level '] = c2.selectbox(
-        "Scholarship Level",
-        options=sorted(df['scholarship level '].dropna().unique().tolist())
-    )
-
 
     
     # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
