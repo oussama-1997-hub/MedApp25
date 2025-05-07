@@ -18,7 +18,7 @@ st.markdown(
         margin-bottom: 0.25rem;
     }
     .subtitle {
-        font-size: 1.2rem;
+        font-size: 2.5rem;
         color: #566573;
         text-align: center;
         margin-top: 0;
