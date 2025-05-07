@@ -192,11 +192,11 @@ with st.form("patient_form"):
         indig = c2.checkbox("Indigent CNAM Coverage")
 
     with st.expander("🩺 Medical History", expanded=False):
-    cols = st.columns(2)
-    for i, col in enumerate(binary_cols):
-        col_title = col.replace("_", " ").title()
-        val = cols[i % 2].checkbox(col_title)
-        key_inputs[col] = int(val)
+        cols = st.columns(2)
+        for i, col in enumerate(binary_cols):
+            col_title = col.replace("_", " ").title()
+            val = cols[i % 2].checkbox(col_title)
+            key_inputs[col] = int(val)
 
     with st.expander("💧 Dialysis Parameters", expanded=False):
         numeric_list = [c for c in df.columns if c not in binary_cols + multi_cat_cols 
