@@ -1,5 +1,4 @@
 import streamlit as st
-# ─── Layout="wide" : s'affiche sur tout l'écran  ────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Technique Survival Predictor", layout="wide")
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -179,7 +178,7 @@ with st.form("patient_form"):
     )[1]
     
      # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
-    st.markdown("### 🧩 Optional Inputs ")
+    st.markdown("### 🧩 Optional Inputs (for more precision)")
 
     # Track which keys already exist
     existing = set(key_inputs.keys())
@@ -232,16 +231,12 @@ with st.form("patient_form"):
                 options,
                 index=0
             )
-            
-# ─── Button Submit ─────────────────────────────────────────────────────────────────
-    
+
     submitted = st.form_submit_button("🔍 Predict")
 # ─── PREDICTION ─────────────────────────────────────────────────────────────────
 if submitted:
     # Start from the key_inputs dict (which already has 'scholarship level ')
     inp = dict(key_inputs)
-
-    # ───METTRE FEATURES QUE J AI CHANGE LEUS NOMS DS INTERFACE EX MALE 0 ET FEMALE 1 ─────────────────────────────────────────────────────────────────
 
     # Add demographic & socioeconomic flags
     inp['Gender ']                   = gender_map[gender]
