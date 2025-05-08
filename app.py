@@ -62,7 +62,8 @@ df = load_data()
 with st.expander("📊 View Sample Data", expanded=False):
     st.markdown("**First 5 rows of the dataset:**")
     st.markdown('<div class="df-container">', unsafe_allow_html=True)
-    st.dataframe(df.head(), use_container_width=True)
+    #st.dataframe(df.head(), use_container_width=True)
+    st.dataframe(df, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ─── MODEL SETUP ────────────────────────────────────────────────────────────────
