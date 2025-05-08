@@ -55,8 +55,7 @@ st.markdown(
 # ─── LOAD DATA ──────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_data():
-    url = "  https://raw.githubusercontent.com/SondesHammami/MedApp25/blob/main/BD%20sans%20encod%20stand.xlsx"
-   
+    url = "https://raw.githubusercontent.com/SondesHammami/MedApp25/blob/main/BD%20sans%20encod%20stand.xlsx"
     return pd.read_excel(url, engine="openpyxl")
 
 df = load_data()
