@@ -55,12 +55,7 @@ st.markdown(
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/SondesHammami/MedApp25/blob/main/BD%20sans%20encod%20stand.xlsx"
-    try:
-    df = pd.read_excel(url, engine="openpyxl")
-except Exception as e:
-    st.error(f"Erreur lors du chargement des données : {e}")
-    raise
-
+    return pd.read_excel(url, engine="openpyxl")
 
 df = load_data()
 
