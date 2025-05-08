@@ -51,10 +51,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ─── LOAD DATA ──────────────────────────────────────────────────────────────────
+# ─── LOAD DATA : eliminer /blob , et copier raw.githubusercontent.com ──────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/SondesHammami/MedApp25/blob/main/BD%20sans%20encod%20stand.xlsx"
+    url = "https://raw.githubusercontent.com/SondesHammami/MedApp25/main/BD%20sans%20encod%20stand.xlsx"
     return pd.read_excel(url, engine="openpyxl")
 
 df = load_data()
