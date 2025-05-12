@@ -179,7 +179,7 @@ with st.form("patient_form"):
     )[1]
     
      # ─── OPTIONAL SECTIONS ──────────────────────────────────────────────────────
-    st.markdown("### 🧩 Optional Inputs (for more precision)")
+    st.markdown("### 🧩 Optional Inputs ")
 
     # Track which keys already exist
     existing = set(key_inputs.keys())
