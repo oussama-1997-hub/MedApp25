@@ -9,7 +9,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 # ─── STYLING ────────────────────────────────────────────────────────────────────
 st.markdown(
     """
-    <style>
+<style>
     .big-title {
         font-size: 3rem;
         font-weight: 700;
